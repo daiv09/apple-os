@@ -16,9 +16,9 @@ interface MacOSDockProps {
   className?: string;
 }
 
-const MacOSDock: React.FC<MacOSDockProps> = ({ 
-  apps, 
-  onAppClick, 
+const MacOSDock: React.FC<MacOSDockProps> = ({
+  apps,
+  onAppClick,
   openApps = [],
   className = ''
 }) => {
@@ -38,7 +38,7 @@ const MacOSDock: React.FC<MacOSDockProps> = ({
 
     // Base calculations on smaller dimension for better mobile experience
     const smallerDimension = Math.min(window.innerWidth, window.innerHeight);
-    
+
     // Scale icon size based on screen size
     if (smallerDimension < 480) {
       // Mobile phones
@@ -96,15 +96,15 @@ const MacOSDock: React.FC<MacOSDockProps> = ({
       const normalIconCenter = (index * (baseIconSize + baseSpacing)) + (baseIconSize / 2);
       const minX = mousePosition - (effectWidth / 2);
       const maxX = mousePosition + (effectWidth / 2);
-      
+
       if (normalIconCenter < minX || normalIconCenter > maxX) {
         return minScale;
       }
-      
+
       const theta = ((normalIconCenter - minX) / effectWidth) * 2 * Math.PI;
       const cappedTheta = Math.min(Math.max(theta, 0), 2 * Math.PI);
       const scaleFactor = (1 - Math.cos(cappedTheta)) / 2;
-      
+
       return minScale + (scaleFactor * (maxScale - minScale));
     });
   }, [apps, baseIconSize, baseSpacing, effectWidth, maxScale, minScale]);
@@ -112,7 +112,7 @@ const MacOSDock: React.FC<MacOSDockProps> = ({
   // Calculate positions based on current scales
   const calculatePositions = useCallback((scales: number[]) => {
     let currentX = 0;
-    
+
     return scales.map((scale) => {
       const scaledWidth = baseIconSize * scale;
       const centerX = currentX + (scaledWidth / 2);
@@ -149,13 +149,13 @@ const MacOSDock: React.FC<MacOSDockProps> = ({
       });
     });
 
-    const scalesNeedUpdate = currentScales.some((scale, index) => 
+    const scalesNeedUpdate = currentScales.some((scale, index) =>
       Math.abs(scale - targetScales[index]) > 0.002
     );
-    const positionsNeedUpdate = currentPositions.some((pos, index) => 
+    const positionsNeedUpdate = currentPositions.some((pos, index) =>
       Math.abs(pos - targetPositions[index]) > 0.1
     );
-    
+
     if (scalesNeedUpdate || positionsNeedUpdate || mouseX !== null) {
       animationFrameRef.current = requestAnimationFrame(animateToTarget);
     }
@@ -178,16 +178,16 @@ const MacOSDock: React.FC<MacOSDockProps> = ({
   // Throttled mouse movement handler
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     const now = performance.now();
-    
+
     if (now - lastMouseMoveTime.current < 16) {
       return;
     }
-    
+
     lastMouseMoveTime.current = now;
-    
+
     if (dockRef.current) {
       const rect = dockRef.current.getBoundingClientRect();
-      const padding = Math.max(8, baseIconSize * 0.12);
+      const padding = baseIconSize * 0.12;
       setMouseX(e.clientX - rect.left - padding);
     }
   }, [baseIconSize]);
@@ -200,7 +200,7 @@ const MacOSDock: React.FC<MacOSDockProps> = ({
     const bounceHeight = Math.max(-8, -baseIconSize * 0.15);
     element.style.transition = 'transform 0.2s ease-out';
     element.style.transform = `translateY(${bounceHeight}px)`;
-    
+
     setTimeout(() => {
       element.style.transform = 'translateY(0px)';
     }, 200);
@@ -211,7 +211,7 @@ const MacOSDock: React.FC<MacOSDockProps> = ({
       if (typeof window !== 'undefined' && (window as any).gsap) {
         const gsap = (window as any).gsap;
         const bounceHeight = currentScales[index] > 1.3 ? -baseIconSize * 0.2 : -baseIconSize * 0.15;
-        
+
         gsap.to(iconRefs.current[index], {
           y: bounceHeight,
           duration: 0.2,
@@ -224,21 +224,21 @@ const MacOSDock: React.FC<MacOSDockProps> = ({
         createBounceAnimation(iconRefs.current[index]!);
       }
     }
-    
+
     onAppClick(appId);
   };
 
   // Calculate content width
-  const contentWidth = currentPositions.length > 0 
-    ? Math.max(...currentPositions.map((pos, index) => 
-        pos + (baseIconSize * currentScales[index]) / 2
-      ))
+  const contentWidth = currentPositions.length > 0
+    ? Math.max(...currentPositions.map((pos, index) =>
+      pos + (baseIconSize * currentScales[index]) / 2
+    ))
     : (apps.length * (baseIconSize + baseSpacing)) - baseSpacing;
 
-  const padding = Math.max(8, baseIconSize * 0.12);
+  const padding = 0;
 
-    return (
-    <div 
+  return (
+    <div
       ref={dockRef}
       className={`backdrop-blur-md ${className}`}
       style={{
@@ -257,7 +257,7 @@ const MacOSDock: React.FC<MacOSDockProps> = ({
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      <div 
+      <div
         className="relative"
         style={{
           height: `${baseIconSize}px`,
@@ -268,7 +268,7 @@ const MacOSDock: React.FC<MacOSDockProps> = ({
           const scale = currentScales[index];
           const position = currentPositions[index] || 0;
           const scaledSize = baseIconSize * scale;
-          
+
           return (
             <div
               key={app.id}
@@ -277,7 +277,7 @@ const MacOSDock: React.FC<MacOSDockProps> = ({
               title={app.name}
               onClick={() => handleAppClick(app.id, index)}
               style={{
-                left: `${position - scaledSize / 2}px`,
+                left: `${position - (baseIconSize / 2)}px`,
                 bottom: '0px',
                 width: `${scaledSize}px`,
                 height: `${scaledSize}px`,
@@ -295,10 +295,10 @@ const MacOSDock: React.FC<MacOSDockProps> = ({
                   filter: `drop-shadow(0 ${scale > 1.2 ? Math.max(2, baseIconSize * 0.05) : Math.max(1, baseIconSize * 0.03)}px ${scale > 1.2 ? Math.max(4, baseIconSize * 0.1) : Math.max(2, baseIconSize * 0.06)}px rgba(0,0,0,${0.2 + (scale - 1) * 0.15}))`
                 }}
               />
-              
+
               {/* App Indicator Dot */}
               {openApps.includes(app.id) && (
-                <div 
+                <div
                   className="absolute"
                   style={{
                     bottom: `${Math.max(-2, -baseIconSize * 0.05)}px`,

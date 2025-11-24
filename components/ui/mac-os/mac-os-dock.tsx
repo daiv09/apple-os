@@ -246,7 +246,7 @@ return (
       className={`backdrop-blur-md ${className}`}
       style={{
         width: `${contentWidth + padding * 2}px`,
-        height: `${dynamicDockHeight}px`,
+        height: ``,
         background: 'rgba(45, 45, 45, 0.75)',
         borderRadius: `${Math.max(12, baseIconSize * 0.4)}px`,
         border: '1px solid rgba(255,255,255,0.15)',
