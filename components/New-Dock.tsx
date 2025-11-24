@@ -203,13 +203,13 @@ const NewDock: React.FC = () => {
     // MAIL
     if (appId === "mail") {
       const isRunning = openApps.includes("mail");
-      
+
       if (isRunning && showMail) {
         setShowMail(false);
         setCurrentApp("Finder");
         return;
       }
-      
+
       if (isRunning && !showMail) {
         setShowMail(true);
         setCurrentApp("Mail");
@@ -259,7 +259,7 @@ const NewDock: React.FC = () => {
         setCurrentApp("Finder");
         return;
       }
-      
+
       if (isRunning && !showSafari) {
         setShowSafari(true);
         setCurrentApp("Safari");
@@ -281,7 +281,7 @@ const NewDock: React.FC = () => {
         setCurrentApp("Finder");
         return;
       }
-      
+
       if (isRunning && !showCalculator) {
         setShowCalculator(true);
         setCurrentApp("Calculator");
@@ -297,13 +297,13 @@ const NewDock: React.FC = () => {
     // PHOTOS
     if (appId === "photos") {
       const isRunning = openApps.includes("photos");
-      
+
       if (isRunning && showPhotos) {
         setShowPhotos(false);
         setCurrentApp("Finder");
         return;
       }
-      
+
       if (isRunning && !showPhotos) {
         setShowPhotos(true);
         setCurrentApp("Photos");
@@ -319,13 +319,13 @@ const NewDock: React.FC = () => {
     // MUSIC
     if (appId === "music") {
       const isRunning = openApps.includes("music");
-      
+
       if (isRunning && showMusic) {
         setShowMusic(false);
         setCurrentApp("Finder");
         return;
       }
-      
+
       if (isRunning && !showMusic) {
         setShowMusic(true);
         setCurrentApp("Music");
@@ -347,7 +347,7 @@ const NewDock: React.FC = () => {
         setCurrentApp("Finder");
         return;
       }
-      
+
       if (isRunning && !showCalendar) {
         setShowCalendar(true);
         setCurrentApp("Calendar");
@@ -369,7 +369,7 @@ const NewDock: React.FC = () => {
         setCurrentApp("Finder");
         return;
       }
-      
+
       if (isRunning && !showFinder) {
         setShowFinder(true);
         setCurrentApp("Finder");

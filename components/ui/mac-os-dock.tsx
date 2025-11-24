@@ -29,23 +29,6 @@ const MacOSDock: React.FC<MacOSDockProps> = ({
   const iconRefs = useRef<(HTMLDivElement | null)[]>([]);
   const animationFrameRef = useRef<number | undefined>(undefined);
   const lastMouseMoveTime = useRef<number>(0);
-  const [contextMenu, setContextMenu] = useState<{
-    visible: boolean;
-    x: number;
-    y: number;
-    app: DockApp | null;
-  }>({
-    visible: false,
-    x: 0,
-    y: 0,
-    app: null,
-  });
-  useEffect(() => {
-    const closeMenu = () =>
-      setContextMenu((prev) => ({ ...prev, visible: false }));
-    window.addEventListener("click", closeMenu);
-    return () => window.removeEventListener("click", closeMenu);
-  }, []);
 
   // Responsive size calculations based on viewport
   const getResponsiveConfig = useCallback(() => {
@@ -255,147 +238,86 @@ const MacOSDock: React.FC<MacOSDockProps> = ({
   const padding = Math.max(8, baseIconSize * 0.12);
 
     return (
-      <div
-        ref={dockRef}
-        className={`backdrop-blur-md ${className}`}
+    <div 
+      ref={dockRef}
+      className={`backdrop-blur-md ${className}`}
+      style={{
+        width: `${contentWidth + padding * 2}px`,
+        background: 'rgba(45, 45, 45, 0.75)',
+        borderRadius: `${Math.max(12, baseIconSize * 0.4)}px`,
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+        boxShadow: `
+          0 ${Math.max(4, baseIconSize * 0.1)}px ${Math.max(16, baseIconSize * 0.4)}px rgba(0, 0, 0, 0.4),
+          0 ${Math.max(2, baseIconSize * 0.05)}px ${Math.max(8, baseIconSize * 0.2)}px rgba(0, 0, 0, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.15),
+          inset 0 -1px 0 rgba(0, 0, 0, 0.2)
+        `,
+        padding: `${padding}px`
+      }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div 
+        className="relative"
         style={{
-          width: `${contentWidth + padding * 2}px`,
-          background: "rgba(245, 245, 245, 0.12)", // More translucent light base
-          backdropFilter: "blur(30px)", // stronger blur
-          WebkitBackdropFilter: "blur(30px)", // macOS Safari prefix
-          borderRadius: `${Math.max(12, baseIconSize * 0.4)}px`,
-          border: "1px solid rgba(255, 255, 255, 0.3)", // lighter border
-          boxShadow: `
-    0 4px 30px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.3)
-  `,
-          padding: `${padding}px`,
-          position: "relative",
-          // overflow: "hidden",
+          height: `${baseIconSize}px`,
+          width: '100%'
         }}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
       >
-        <div
-          className="relative"
-          style={{
-            height: `${baseIconSize}px`,
-            width: "100%",
-          }}
-        >
-          {apps.map((app, index) => {
-            const scale = currentScales[index];
-            const position = currentPositions[index] || 0;
-            const scaledSize = baseIconSize * scale;
-
-            return (
-              <div
-                key={app.id}
-                ref={(el) => {
-                  iconRefs.current[index] = el;
-                }}
-                className="absolute cursor-pointer flex flex-col items-center justify-end"
-                title={app.name}
-                onClick={() => handleAppClick(app.id, index)}
-                style={{
-                  left: `${position - scaledSize / 2}px`,
-                  bottom: "0px",
-                  width: `${scaledSize}px`,
-                  height: `${scaledSize}px`,
-                  transformOrigin: "bottom center",
-                  zIndex: Math.round(scale * 10),
-                }}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  setContextMenu({
-                    visible: true,
-                    x: e.clientX,
-                    y: e.clientY - 10,
-                    app,
-                  });
-                }}
-              >
-                <img
-                  src={app.icon}
-                  alt={app.name}
-                  width={scaledSize}
-                  height={scaledSize}
-                  className="object-contain"
-                  style={{
-                    filter: `drop-shadow(0 ${
-                      scale > 1.2
-                        ? Math.max(2, baseIconSize * 0.05)
-                        : Math.max(1, baseIconSize * 0.03)
-                    }px ${
-                      scale > 1.2
-                        ? Math.max(4, baseIconSize * 0.1)
-                        : Math.max(2, baseIconSize * 0.06)
-                    }px rgba(0,0,0,${0.2 + (scale - 1) * 0.15}))`,
-                  }}
-                />
-
-                {/* App Indicator Dot */}
-                {openApps.includes(app.id) && (
-                  <div
-                    className="absolute"
-                    style={{
-                      bottom: `${Math.max(-2, -baseIconSize * 0.05)}px`,
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      width: `${Math.max(3, baseIconSize * 0.06)}px`,
-                      height: `${Math.max(3, baseIconSize * 0.06)}px`,
-                      borderRadius: "50%",
-                      backgroundColor: "rgba(0, 0, 0, 0.8)",
-                      boxShadow: "0 0 4px rgba(0, 0, 0, 0.3)",
-                    }}
-                  />
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {contextMenu.visible && contextMenu.app && (
-          <div
-            className="fixed z-[9999] bg-white/95 shadow-lg rounded-xl border border-gray-200 backdrop-blur-lg"
-            style={{
-              top: contextMenu.y,
-              left: contextMenu.x,
-              width: "180px",
-              padding: "8px 0",
-            }}
-          >
-            <div className="px-3 py-1.5 text-sm font-medium text-gray-700">
-              {contextMenu.app.name}
-            </div>
-
-            <hr className="my-1" />
-
-            <button className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100">
-              Show All Windows
-            </button>
-
-            <button className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100">
-              Hide
-            </button>
-
-            <button
-              className="w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
-              onClick={() => {
-                if (contextMenu.app) {
-                  // Tell parent to force close
-                  onAppClick(`quit:${contextMenu.app.id}`);
-                }
-                setContextMenu({ visible: false, x: 0, y: 0, app: null });
+        {apps.map((app, index) => {
+          const scale = currentScales[index];
+          const position = currentPositions[index] || 0;
+          const scaledSize = baseIconSize * scale;
+          
+          return (
+            <div
+              key={app.id}
+              ref={(el) => { iconRefs.current[index] = el; }}
+              className="absolute cursor-pointer flex flex-col items-center justify-end"
+              title={app.name}
+              onClick={() => handleAppClick(app.id, index)}
+              style={{
+                left: `${position - scaledSize / 2}px`,
+                bottom: '0px',
+                width: `${scaledSize}px`,
+                height: `${scaledSize}px`,
+                transformOrigin: 'bottom center',
+                zIndex: Math.round(scale * 10)
               }}
             >
-              Quit
-            </button>
-          </div>
-        )}
+              <img
+                src={app.icon}
+                alt={app.name}
+                width={scaledSize}
+                height={scaledSize}
+                className="object-contain"
+                style={{
+                  filter: `drop-shadow(0 ${scale > 1.2 ? Math.max(2, baseIconSize * 0.05) : Math.max(1, baseIconSize * 0.03)}px ${scale > 1.2 ? Math.max(4, baseIconSize * 0.1) : Math.max(2, baseIconSize * 0.06)}px rgba(0,0,0,${0.2 + (scale - 1) * 0.15}))`
+                }}
+              />
+              
+              {/* App Indicator Dot */}
+              {openApps.includes(app.id) && (
+                <div 
+                  className="absolute"
+                  style={{
+                    bottom: `${Math.max(-2, -baseIconSize * 0.05)}px`,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: `${Math.max(3, baseIconSize * 0.06)}px`,
+                    height: `${Math.max(3, baseIconSize * 0.06)}px`,
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                    boxShadow: '0 0 4px rgba(0, 0, 0, 0.3)',
+                  }}
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
-    );
+    </div>
+  );
 };
 
 export default MacOSDock;
