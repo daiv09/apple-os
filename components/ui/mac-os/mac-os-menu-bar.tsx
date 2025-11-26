@@ -589,7 +589,7 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
 
               {/* Current App Name */}
               <span className="text-white text-sm font-semibold">
-                {currentApp || "Daiwiik Harihar's Portfolio"}
+                {currentApp || "Portfolio"}
               </span>
 
               {/* Menu Items */}
