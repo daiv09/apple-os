@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
-import MacOSDock from "./ui/mac-os-dock";
+import MacOSDock from "./mac-os-dock";
 import TerminalPopup from "./ui/TerminalPopup";
 import NotesPopup from "./ui/mac-os/NotesPopup";
 import SafariPopup from "./ui/mac-os/SafariPopup";
@@ -59,7 +59,7 @@ const sampleApps = [
     id: "calendar",
     name: "Calendar",
     icon: "https://cdn.jim-nielsen.com/macos/1024/calendar-2021-04-29.png?rf=1024",
-  },
+  }
 ];
 
 const NewDock: React.FC = () => {
@@ -513,7 +513,6 @@ const NewDock: React.FC = () => {
       />
 
       {/* Dock */}
-      {/* ⭐ The DOCK itself */}
       <div
         ref={dockRef}
         className={`
@@ -521,6 +520,7 @@ const NewDock: React.FC = () => {
           transition-all duration-300
           ${dockVisible ? "bottom-0 opacity-100" : "-bottom-20 opacity-0 pointer-events-none"}
         `}
+        style={{ height: "80px" }}
       >
         <MacOSDock
           apps={sampleApps}

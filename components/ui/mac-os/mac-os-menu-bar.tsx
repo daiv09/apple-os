@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useApp } from '@/contexts/AppContext';
 
 // Types
@@ -31,14 +31,10 @@ const DEFAULT_MENUS: MenuConfig[] = [
   {
     label: "File",
     items: [
-      { label: "Go to Home", action: "go-home", shortcut: "⌘H" },
-      { label: "Open About Me", action: "go-about" },
-      { label: "Open Projects", action: "go-projects", shortcut: "⌘1" },
-      { label: "Open Skills", action: "go-skills", shortcut: "⌘2" },
-      { label: "Open Experience", action: "go-experience", shortcut: "⌘3" },
-      { label: "Separator", type: "separator" },
-      { label: "Open Designs", action: "go-designs" },
-      { label: "Open Contact Page", action: "go-contact" },
+      { label: "About Me", action: "go-about" },
+      { label: "Projects", action: "go-projects", shortcut: "⌘1" },
+      { label: "Skills", action: "go-skills", shortcut: "⌘2" },
+      { label: "Experience", action: "go-experience", shortcut: "⌘3" },
       { label: "Separator", type: "separator" },
       { label: "Download Resume…", action: "download-resume", shortcut: "⌘S" },
       {
@@ -48,8 +44,6 @@ const DEFAULT_MENUS: MenuConfig[] = [
       },
       { label: "Separator", type: "separator" },
       { label: "Print This Page…", action: "print-page", shortcut: "⌘P" },
-      { label: "Separator", type: "separator" },
-      { label: "Close Portfolio", action: "close-window", shortcut: "⌘W" },
     ],
   },
   {
@@ -61,7 +55,7 @@ const DEFAULT_MENUS: MenuConfig[] = [
       {
         label: "Search Portfolio…",
         action: "search-portfolio",
-        shortcut: "⌘F",
+        shortcut: "⌘K", // Standard command palette shortcut
       },
     ],
   },
@@ -70,7 +64,6 @@ const DEFAULT_MENUS: MenuConfig[] = [
     items: [
       { label: "Enable Light Mode", action: "light-mode", shortcut: "⌥⌘1" },
       { label: "Enable Dark Mode", action: "dark-mode", shortcut: "⌥⌘2" },
-
       { label: "Separator", type: "separator" },
 
       {
@@ -83,24 +76,19 @@ const DEFAULT_MENUS: MenuConfig[] = [
         action: "filter-experience",
         shortcut: "⌥⌘4",
       },
-
       { label: "Separator", type: "separator" },
-
       { label: "Enter Fullscreen", action: "fullscreen", shortcut: "⌃⌘F" },
     ],
   },
   {
     label: "Window",
     items: [
-      { label: "Scroll to Top", action: "scroll-top", shortcut: "⌘↑" },
-      { label: "Scroll to Bottom", action: "scroll-bottom", shortcut: "⌘↓" },
-
+      { label: "Minimize All", action: "minimize-all", shortcut: "⌘M" },
+      { label: "Close All Windows", action: "close-all", shortcut: "⌥⌘W" },
       { label: "Separator", type: "separator" },
-
       { label: "Reload Portfolio", action: "reload-portfolio", shortcut: "⌘R" },
     ],
   },
-
   {
     label: "Resume",
     action: "open-resume",
@@ -111,18 +99,12 @@ const DEFAULT_MENUS: MenuConfig[] = [
 const APPLE_MENU_ITEMS: MenuItemOption[] = [
   { label: "About This Portfolio", action: "about-portfolio" },
   { label: "Separator", type: "separator" },
-
   { label: "Visit My GitHub", action: "open-github" },
   { label: "Visit My LinkedIn", action: "open-linkedin" },
   { label: "Separator", type: "separator" },
-
-  { label: "Recent Projects", action: "recent-projects", hasSubmenu: true },
-  { label: "Separator", type: "separator" },
-
   { label: "Contact Me", action: "contact-me", shortcut: "⌘K" },
   { label: "Report an Issue…", action: "report-issue" },
   { label: "Separator", type: "separator" },
-
   { label: "Restart Navigation", action: "reset-navigation" },
 ];
 
@@ -247,43 +229,35 @@ const MenuDropdown: React.FC<MenuDropdownProps> = ({
   );
 };
 
-/**
- * MacOS Menu Bar Component
- *
- * An authentic macOS-style menu bar with glassmorphic design, live clock,
- * and customizable menus.
- *
- * @param appName - The application name to display (default: "Finder")
- * @param appIcon - URL to the app icon/logo (default: Apple logo)
- * @param menus - Array of menu configurations (default: Finder menus)
- * @param onMenuAction - Callback when a menu item is clicked
- * @param className - Additional CSS classes
- *
- * @example
- * ```tsx
- * // Basic usage with defaults
- * <MacOSMenuBar />
- *
- * // With custom app name
- * <MacOSMenuBar appName="VS Code" />
- *
- * // With custom menus
- * <MacOSMenuBar
- *   appName="My App"
- *   menus={customMenus}
- *   onMenuAction={(action) => console.log(action)}
- * />
- * ```
- */
 const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
   appName = "Daiwiik Harihar's Portfolio",
   menus = DEFAULT_MENUS,
   onMenuAction,
   className = "",
 }) => {
-  const { currentApp } = useApp(); // Get current app from context
+  const { currentApp, setCurrentApp } = useApp(); // Get current app from context
   const router = useRouter();
+  const pathname = usePathname(); // Add usePathname to track route changes
   const [scale, setScale] = useState(1);
+
+  // --- FUNCTIONALITY: Update App Name based on Route ---
+  useEffect(() => {
+    if (!pathname) return;
+    
+    let name = "Daiwiik's Portfolio";
+    if (pathname.includes("projects")) name = "VS Code";
+    else if (pathname.includes("contact")) name = "Mail";
+    else if (pathname.includes("about")) name = "Finder";
+    else if (pathname.includes("designs")) name = "Figma";
+    else if (pathname.includes("experience")) name = "Calendar";
+    else if (pathname.includes("resume")) name = "Preview";
+    
+    // Only update if it's different to avoid loops
+    if (currentApp !== name) {
+      setCurrentApp(name);
+    }
+  }, [pathname, setCurrentApp, currentApp]);
+
 
   useEffect(() => {
     const updateScale = () => {
@@ -300,6 +274,7 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
     window.addEventListener("resize", updateScale);
     return () => window.removeEventListener("resize", updateScale);
   }, []);
+  
   const [currentTime, setCurrentTime] = useState("");
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
@@ -324,9 +299,9 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Handle custom navigation when menu items are clicked
+  // --- FUNCTIONALITY: Core Action Logic ---
   const handleMenuAction = useCallback(
-    (action: string) => {
+    async (action: string) => {
       // ----------- EXTERNAL LINKS -----------
       if (action === "open-github") {
         window.open("https://github.com/daiv09", "_blank");
@@ -367,16 +342,33 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
 
       // ----------- SHARE PORTFOLIO -----------
       if (action === "share-portfolio") {
-        navigator.share?.({
-          title: "Portfolio",
-          text: "Check out this portfolio!",
-          url: window.location.href,
-        });
+        if (navigator.share) {
+          navigator.share({
+            title: "Daiwiik's Portfolio",
+            text: "Check out this developer portfolio!",
+            url: window.location.href,
+          }).catch(console.error);
+        } else {
+          // Fallback
+          navigator.clipboard.writeText(window.location.href);
+          alert("Link copied to clipboard!");
+        }
       }
 
       // ----------- PRINT PAGE -----------
       if (action === "print-page") {
         window.print();
+      }
+
+      // ----------- CLIPBOARD ACTIONS -----------
+      if (action === "copy-email") {
+        await navigator.clipboard.writeText("daiwiikharihar@gmail.com"); // Replace with actual email
+        // alert("Email copied to clipboard"); 
+      }
+      
+      if (action === "copy-phone") {
+        await navigator.clipboard.writeText("+91 7755921891"); // Replace with actual phone
+        // alert("Phone number copied to clipboard");
       }
 
       // ----------- CONTACT ME -----------
@@ -386,35 +378,44 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
 
       // ----------- REPORT ISSUE -----------
       if (action === "report-issue") {
-        router.push("/feedback");
+        window.open("https://github.com/daiv09/portfolio-v2/issues", "_blank");
       }
 
       // ----------- MODE SWITCH -----------
       if (action === "light-mode") {
         document.documentElement.classList.remove("dark");
+        localStorage.setItem("theme", "light");
       }
 
       if (action === "dark-mode") {
         document.documentElement.classList.add("dark");
+        localStorage.setItem("theme", "dark");
       }
 
       // ----------- FILTER SECTIONS (custom) -----------
-      if (action === "filter-projects") router.push("/projects#only");
-      if (action === "filter-experience") router.push("/experience#only");
+      // Maps to query params that your page components should listen to
+      if (action === "filter-projects") router.push("/projects?view=all");
+      if (action === "filter-experience") router.push("/experience?view=all");
+
+      // ----------- FULLSCREEN -----------
       if (action === "fullscreen") {
         if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen();
+          document.documentElement.requestFullscreen().catch(e => console.error(e));
         } else {
-          document.exitFullscreen();
+          document.exitFullscreen().catch(e => console.error(e));
         }
       }
 
-      // ----------- RELOAD PORTFOLIO -----------
+      // ----------- WINDOW MANAGEMENT -----------
       if (action === "reload-portfolio") {
         window.location.reload();
       }
 
-      // ----------- RESET NAVIGATION -----------
+      if (action === "minimize-all" || action === "close-all") {
+        // "Minimize" effectively goes to home in a single page app context
+        router.push("/");
+      }
+
       if (action === "reset-navigation") {
         router.push("/");
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -422,8 +423,18 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
 
       // ----------- SEARCH -----------
       if (action === "search-portfolio") {
-        const query = prompt("Search the portfolio:");
-        if (query) router.push(`/search?q=${query}`);
+        // Since we don't have a complex global context, we use a prompt or dispatch event
+        // If you add the Spotlight component later, listen for this event:
+        window.dispatchEvent(new CustomEvent('toggle-spotlight'));
+        
+        // Temporary fallback if no event listener handles it
+        // const query = prompt("Quick Search (Pages, Projects...):");
+        // if (query) router.push(`/search?q=${query}`);
+      }
+      
+      // ----------- ABOUT -----------
+      if (action === "about-portfolio") {
+        alert("Daiwiik Harihar's Portfolio\nVersion 2.0.0 (Build 2025)\n\nBuilt with Next.js, Tailwind, and React.");
       }
 
       // Trigger custom callback if parent wants it
@@ -431,6 +442,46 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
     },
     [router, onMenuAction]
   );
+
+  // --- FUNCTIONALITY: Keyboard Shortcuts ---
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Helper to check for Command (Mac) or Ctrl (Windows)
+      const isCmd = e.metaKey || e.ctrlKey;
+      
+      if (!isCmd) return;
+
+      switch(e.key.toLowerCase()) {
+        case 'k': 
+          e.preventDefault();
+          handleMenuAction('search-portfolio'); // or contact-me based on menu config
+          break;
+        case 's':
+          e.preventDefault();
+          handleMenuAction('download-resume');
+          break;
+        case 'p':
+          e.preventDefault();
+          handleMenuAction('print-page');
+          break;
+        case 'm':
+          e.preventDefault();
+          handleMenuAction('minimize-all');
+          break;
+        case 'r':
+          if (!e.shiftKey) { // CMD+R is reload naturally, but we can intercept if needed
+             // let browser handle reload, or:
+             // e.preventDefault(); handleMenuAction('reload-portfolio');
+          }
+          break;
+        // Add more shortcuts as defined in your DEFAULT_MENUS
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleMenuAction]);
+
 
   // Menu toggling logic (unchanged)
   const handleAppleMenuClick = useCallback(() => {
@@ -646,5 +697,4 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
     </div>
   );
 };
-
 export default MacOSMenuBar;

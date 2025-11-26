@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "motion/react";
 
 interface CalculatorPopupProps {
@@ -35,47 +35,92 @@ const CalculatorPopup = ({ onClose }: CalculatorPopupProps) => {
     { label: "=", type: "equal" },
   ];
 
-  const customHandleClick = (value: string) => {
+  // Refactored logic into a reusable callback
+  const processInput = useCallback((value: string) => {
     // AC - Clear all
     if (value === "AC") return setInput("0");
 
-    // X - Backspace/Undo (delete last character)
+    // X - Backspace/Undo
     if (value === "X") {
       setInput((prev) => {
+        if (prev === "Error") return "0";
         if (prev.length === 1) return "0";
         return prev.slice(0, -1);
       });
       return;
     }
 
-    // +/- Toggle negative/positive
+    // +/- Toggle
     if (value === "+/-") {
-      if (input === "0") return;
-      return setInput(String(parseFloat(input) * -1));
+      setInput((prev) => {
+        if (prev === "0" || prev === "Error") return prev;
+        return String(parseFloat(prev) * -1);
+      });
+      return;
     }
 
-    // = Calculate result
+    // = Calculate
     if (value === "=") {
-      try {
-        const safeInput = input
-          .replace(/÷/g, "/")
-          .replace(/×/g, "*")
-          .replace(/--/g, "+");
+      setInput((prev) => {
+        try {
+          // Prevent empty execution
+          if (!prev || prev === "Error") return "0";
+          
+          const safeInput = prev
+            .replace(/÷/g, "/")
+            .replace(/×/g, "*")
+            .replace(/--/g, "+");
 
-        const result = Function(`return ${safeInput}`)();
-        return setInput(String(result));
-      } catch {
-        return setInput("Error");
-      }
+          // eslint-disable-next-line no-new-func
+          const result = Function(`return ${safeInput}`)();
+          return String(result);
+        } catch {
+          return "Error";
+        }
+      });
+      return;
     }
 
-    // Append input
+    // Standard Input
     setInput((prev) => {
       if (prev === "0" && value !== ".") return value;
       if (prev === "Error") return value;
       return prev + value;
     });
-  };
+  }, []); // No dependencies needed as we use functional state updates mostly
+
+  // Keyboard Event Listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't handle keys if minimized
+      if (minimized) return;
+
+      const key = e.key;
+
+      // Prevent default browser actions for some keys (like quick find with /)
+      if (['/', '*', '+', '-', 'Enter', 'Backspace', 'Escape'].includes(key)) {
+        e.preventDefault();
+      }
+
+      // Number keys
+      if (/^[0-9.]$/.test(key)) {
+        processInput(key);
+      }
+      // Operators
+      else if (key === '+') processInput('+');
+      else if (key === '-') processInput('-');
+      else if (key === '*') processInput('×');
+      else if (key === '/') processInput('÷');
+      else if (key === '%') processInput('%');
+      // Actions
+      else if (key === 'Enter' || key === '=') processInput('=');
+      else if (key === 'Backspace') processInput('X');
+      else if (key === 'Escape' || key.toLowerCase() === 'c') processInput('AC');
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [processInput, minimized]);
 
   return (
     <motion.div
@@ -97,8 +142,8 @@ const CalculatorPopup = ({ onClose }: CalculatorPopupProps) => {
           minimized
             ? "w-[160px] h-[50px] overflow-hidden"
             : zoomed
-              ? "w-[380px]"
-              : "w-[300px]"
+            ? "w-[380px]"
+            : "w-[300px]"
         }
       `}
     >
@@ -118,7 +163,8 @@ const CalculatorPopup = ({ onClose }: CalculatorPopupProps) => {
 
         {/* ZOOM */}
         <button
-          className="h-3 w-3 rounded-full bg-gray-600 hover:brightness-110"
+          className="h-3 w-3 rounded-full bg-[#28C840] hover:brightness-110"
+          onClick={() => setZoomed(!zoomed)}
         />
       </div>
 
@@ -126,7 +172,7 @@ const CalculatorPopup = ({ onClose }: CalculatorPopupProps) => {
         <>
           {/* Display */}
           <div className="px-6 pb-4 pt-8 text-right min-h-[100px] flex items-end justify-end">
-            <div className="text-6xl font-extralight tracking-tight">
+            <div className="text-6xl font-extralight tracking-tight break-all">
               {input}
             </div>
           </div>
@@ -148,7 +194,7 @@ const CalculatorPopup = ({ onClose }: CalculatorPopupProps) => {
                 <button
                   key={idx}
                   className={base}
-                  onClick={() => customHandleClick(btn.label)}
+                  onClick={() => processInput(btn.label)}
                 >
                   {btn.label}
                 </button>
