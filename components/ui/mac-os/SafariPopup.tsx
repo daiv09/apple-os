@@ -30,9 +30,9 @@ const SafariPopup = ({ onClose }: SafariPopupProps) => {
    {
      id: crypto.randomUUID(),
      title: "New Tab",
-     url: "daiwiik-harihar.vercel.app",
-     iframeUrl: "https://daiwiik-harihar.vercel.app",
-     history: ["https://daiwiik-harihar.vercel.app"],
+     url: "www.ted.com/about/programs-initiatives/tedx-program",
+     iframeUrl: "https://www.ted.com/about/programs-initiatives/tedx-program",
+     history: ["https://www.ted.com/about/programs-initiatives/tedx-program"],
      historyIndex: 0,
     },
   ]);
