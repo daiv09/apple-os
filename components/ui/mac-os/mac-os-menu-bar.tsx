@@ -230,7 +230,7 @@ const MenuDropdown: React.FC<MenuDropdownProps> = ({
 };
 
 const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
-  appName = "Daiwiik Harihar's Portfolio",
+  appName = "Portfolio",
   menus = DEFAULT_MENUS,
   onMenuAction,
   className = "",
