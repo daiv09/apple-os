@@ -7,23 +7,23 @@
     return (
       <div className="relative min-h-screen w-full overflow-hidden">
         {/* Fixed, responsive background */}
-        <div
+        {/* <div
           className="fixed inset-0 bg-cover bg-center -z-10" // Add pointer-events-none
           style={{
             backgroundImage: "url('./background.jpg')",
           }}
           aria-hidden="true"
-        ></div>
-        {/* <video
+        ></div> */}
+        <video
         autoPlay
         loop
         muted
         playsInline
         className="fixed inset-0 w-full h-full object-cover -z-10"
       >
-        {/* Ensure this file is in your 'public' folder 
+         {/* Ensure this file is in your 'public' folder  */}
         <source src="./video_background.mp4" type="video/mp4" />
-      </video> */}
+      </video>
 
         {/* Navbar */}
         <div className="relative z-50">
