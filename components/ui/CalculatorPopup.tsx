@@ -10,7 +10,7 @@ interface CalculatorPopupProps {
 const CalculatorPopup = ({ onClose }: CalculatorPopupProps) => {
   const [input, setInput] = useState("0");
   const [minimized, setMinimized] = useState(false);
-  const [zoomed, setZoomed] = useState(false);
+  // REMOVED: zoomed state
 
   const buttons = [
     { label: "X", type: "function" },
@@ -35,7 +35,6 @@ const CalculatorPopup = ({ onClose }: CalculatorPopupProps) => {
     { label: "=", type: "equal" },
   ];
 
-  // Refactored logic into a reusable callback
   const processInput = useCallback((value: string) => {
     // AC - Clear all
     if (value === "AC") return setInput("0");
@@ -63,7 +62,6 @@ const CalculatorPopup = ({ onClose }: CalculatorPopupProps) => {
     if (value === "=") {
       setInput((prev) => {
         try {
-          // Prevent empty execution
           if (!prev || prev === "Error") return "0";
           
           const safeInput = prev
@@ -87,32 +85,27 @@ const CalculatorPopup = ({ onClose }: CalculatorPopupProps) => {
       if (prev === "Error") return value;
       return prev + value;
     });
-  }, []); // No dependencies needed as we use functional state updates mostly
+  }, []);
 
   // Keyboard Event Listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't handle keys if minimized
       if (minimized) return;
 
       const key = e.key;
 
-      // Prevent default browser actions for some keys (like quick find with /)
       if (['/', '*', '+', '-', 'Enter', 'Backspace', 'Escape'].includes(key)) {
         e.preventDefault();
       }
 
-      // Number keys
       if (/^[0-9.]$/.test(key)) {
         processInput(key);
       }
-      // Operators
       else if (key === '+') processInput('+');
       else if (key === '-') processInput('-');
       else if (key === '*') processInput('×');
       else if (key === '/') processInput('÷');
       else if (key === '%') processInput('%');
-      // Actions
       else if (key === 'Enter' || key === '=') processInput('=');
       else if (key === 'Backspace') processInput('X');
       else if (key === 'Escape' || key.toLowerCase() === 'c') processInput('AC');
@@ -127,7 +120,7 @@ const CalculatorPopup = ({ onClose }: CalculatorPopupProps) => {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{
         opacity: minimized ? 0.7 : 1,
-        scale: zoomed ? 1.2 : minimized ? 0.7 : 1,
+        scale: minimized ? 0.7 : 1, // Removed zoomed scale logic
       }}
       transition={{ duration: 0.25 }}
       className={`
@@ -141,9 +134,7 @@ const CalculatorPopup = ({ onClose }: CalculatorPopupProps) => {
         ${
           minimized
             ? "w-[160px] h-[50px] overflow-hidden"
-            : zoomed
-            ? "w-[380px]"
-            : "w-[300px]"
+            : "w-[300px]" // Removed zoomed width logic
         }
       `}
     >
@@ -161,10 +152,10 @@ const CalculatorPopup = ({ onClose }: CalculatorPopupProps) => {
           onClick={() => setMinimized(!minimized)}
         />
 
-        {/* ZOOM */}
-        <button
-          className="h-3 w-3 rounded-full bg-[#28C840] hover:brightness-110"
-          onClick={() => setZoomed(!zoomed)}
+        {/* ZOOM - Disabled/Visual only */}
+        <div
+          className="h-3 w-3 rounded-full bg-gray-600 hover:brightness-110"
+          title="Zoom disabled"
         />
       </div>
 
