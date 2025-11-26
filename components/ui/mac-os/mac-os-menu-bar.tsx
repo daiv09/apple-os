@@ -244,7 +244,7 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
   useEffect(() => {
     if (!pathname) return;
     
-    let name = "Daiwiik's Portfolio";
+    let name = "Portfolio";
     if (pathname.includes("projects")) name = "VS Code";
     else if (pathname.includes("contact")) name = "Mail";
     else if (pathname.includes("about")) name = "Finder";
