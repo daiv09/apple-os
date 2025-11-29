@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import MacOSDock from "./mac-os-dock";
 import TerminalPopup from "./ui/TerminalPopup";
 import NotesPopup from "./ui/mac-os/NotesPopup";
@@ -13,7 +13,7 @@ import FinderPopup from "./ui/mac-os/FinderPopup";
 import { useFullscreen } from "@/app/FullscreenContext";
 import { useApp } from '@/contexts/AppContext';
 
-// Sample apps
+// Sample apps (unchanged)
 const sampleApps = [
   {
     id: "finder",
@@ -62,7 +62,15 @@ const sampleApps = [
   }
 ];
 
-const NewDock: React.FC = () => {
+// Define the type for the exposed handler (App ID string)
+type AppClickHandler = (appId: string) => void;
+
+// Define the component props
+interface NewDockProps {
+  exposeAppClickHandler: React.Dispatch<React.SetStateAction<AppClickHandler | null>>;
+}
+
+const NewDock: React.FC<NewDockProps> = ({ exposeAppClickHandler }) => { // Added exposeAppClickHandler prop
   const [openApps, setOpenApps] = useState<string[]>([]);
   const [showTerminal, setShowTerminal] = useState(false);
   const [isTerminalMinimized, setIsTerminalMinimized] = useState(false);
@@ -74,14 +82,14 @@ const NewDock: React.FC = () => {
   const [showMusic, setShowMusic] = useState(false);
   const [showMail, setShowMail] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
-  const [showFinder, setShowFinder] = useState(true); // Changed to true since finder is open by default
+  const [showFinder, setShowFinder] = useState(true); // Finder open by default
 
   const dockRef = useRef<HTMLDivElement>(null);
 
   const { setCurrentApp } = useApp();
   const { isFullscreen, dockVisible, setDockVisible } = useFullscreen();
 
-  // --- ⭐ PERFECT DOCK AUTOHIDE LIKE MACOS ⭐ ---
+  // --- DOCK AUTOHIDE LOGIC (Unchanged) ---
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       const dock = dockRef.current;
@@ -120,13 +128,20 @@ const NewDock: React.FC = () => {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, [isFullscreen, setDockVisible]);
 
-  const handleAppClick = (appId: string) => {
+  // --- CORE APP CLICK HANDLER (Made into useCallback for stability) ---
+  const handleAppClick = useCallback((appId: string | null | undefined) => {
+    // 🔑 FIX: Check if appId is valid before proceeding
+    if (!appId || typeof appId !== 'string') {
+        console.error("handleAppClick received invalid appId:", appId);
+        return; // Exit function if appId is null, undefined, or not a string
+    }
+    
     // Handle quit action
     if (appId.startsWith("quit:")) {
-      const realId = appId.replace("quit:", "");
+        const realId = appId.replace("quit:", "");
 
-      // Remove from open apps
-      setOpenApps((prev) => prev.filter((id) => id !== realId));
+        // Remove from open apps
+        setOpenApps((prev) => prev.filter((id) => id !== realId));
 
       // Close specific popups and reset to Finder if needed
       if (realId === "terminal") {
@@ -388,7 +403,16 @@ const NewDock: React.FC = () => {
         ? prev.filter((id) => id !== appId)
         : [...prev, appId]
     );
-  };
+  }, [openApps, showTerminal, isTerminalMinimized, showNotes, showSafari, showCalculator, showPhotos, showMusic, showMail, showCalendar, showFinder, setCurrentApp]);
+
+  // --- 🔑 EXPOSE HANDLER TO PARENT COMPONENT ---
+  useEffect(() => {
+    // This effect runs once after the initial render to register the handler.
+    // It runs again if handleAppClick dependency changes (which shouldn't happen 
+    // often due to useCallback and its deps)
+    exposeAppClickHandler(handleAppClick);
+  }, [exposeAppClickHandler, handleAppClick]);
+
 
   return (
     <>
@@ -516,10 +540,10 @@ const NewDock: React.FC = () => {
       <div
         ref={dockRef}
         className={`
-          fixed left-0 w-full flex items-center justify-center z-[9999]
-          transition-all duration-300
-          ${dockVisible ? "bottom-0 opacity-100" : "-bottom-20 opacity-0 pointer-events-none"}
-        `}
+          fixed left-0 w-full flex items-center justify-center z-[9999]
+          transition-all duration-300
+          ${dockVisible ? "bottom-0 opacity-100" : "-bottom-20 opacity-0 pointer-events-none"}
+        `}
         style={{ height: "80px" }}
       >
         <MacOSDock
