@@ -91,82 +91,81 @@ const NotesPopup = ({ onClose }: NotesPopupProps) => {
         fixed z-[9999] bg-[#f7f7f7] border border-neutral-300 shadow-xl
         overflow-hidden transition-all duration-300
 
-        ${
-          zoomed
-            ? `
+        ${zoomed
+          ? `
           left-0 w-screen h-screen rounded-none
           ${navbarVisible ? "top-[40px]" : "top-0"}
         `
-            : minimized
-              ? "top-1/2 left-1/2 w-[200px] h-[40px] -translate-x-1/2 -translate-y-1/2 rounded-xl"
-              : "top-16 right-12 w-[800px] h-[500px] rounded-2xl"
+          : minimized
+            ? "top-1/2 left-1/2 w-[200px] h-[40px] -translate-x-1/2 -translate-y-1/2 rounded-xl"
+            : "top-16 right-12 w-[800px] h-[500px] rounded-2xl"
         }
       `}
     >
-      {/* Title Bar */}
-      <div className="bg-[#ededed] h-10 border-b border-neutral-300 flex items-center px-3 select-none">
-        <div className="flex gap-2">
-          {/* ⭐ FIXED CLOSE BUTTON */}
-          <div
-            onClick={() => {
-              if (zoomed) {
-                setFullscreen(false);
-                setNavbarVisible(true);
-                setDockVisible(true);
-              }
-              onClose();
-            }}
-            className="w-3 h-3 bg-[#ff605c] rounded-full cursor-pointer"
-          />
-
-          {/* Minimize */}
-          <div
-            onClick={() => setMinimized(!minimized)}
-            className="w-3 h-3 bg-[#ffbd44] rounded-full cursor-pointer"
-          />
-
-          {/* Fullscreen */}
-          <div
-            onClick={() => {
-              setZoomed(!zoomed);
-              setFullscreen(!zoomed);
-            }}
-            className="w-3 h-3 bg-[#00ca4e] rounded-full cursor-pointer"
-          />
-        </div>
-
-        <div className="flex-1 text-center text-sm font-medium text-neutral-600">
-          Notes
-        </div>
-      </div>
 
       {/* Notes UI */}
       {!minimized && (
         <div className="flex h-full">
           {/* Sidebar */}
           <div className="w-64 bg-[#fafafa] border-r border-neutral-300 overflow-y-auto">
-            <button
-              onClick={createNewNote}
-              className="w-full text-left px-4 py-3 border-b border-neutral-300 hover:bg-neutral-100 text-sm font-medium"
-            >
-              + New Note
-            </button>
-            {notes.map((note) => (
-              <div
-                key={note.id}
-                onClick={() => setActive(note.id)}
-                className={`px-4 py-3 cursor-pointer border-b border-neutral-200 ${
-                  active === note.id ? "bg-yellow-100" : "hover:bg-neutral-100"
-                }`}
-              >
-                <div className="font-medium text-sm truncate">{note.title}</div>
-                <div className="text-xs text-neutral-500 truncate">
-                  {note.date}
-                </div>
-              </div>
-            ))}
-          </div>
 
+            {/* Traffic lights with spacing */}
+            <div className="flex gap-2 p-4 pb-5">
+              <div
+                onClick={() => {
+                  if (zoomed) {
+                    setFullscreen(false);
+                    setNavbarVisible(true);
+                    setDockVisible(true);
+                  }
+                  onClose();
+                }}
+                className="w-3 h-3 bg-[#ff605c] rounded-full cursor-pointer"
+              />
+
+              <div
+                onClick={() => setMinimized(!minimized)}
+                className="w-3 h-3 bg-[#ffbd44] rounded-full cursor-pointer"
+              />
+
+              <div
+                onClick={() => {
+                  setZoomed(!zoomed);
+                  setFullscreen(!zoomed);
+                }}
+                className="w-3 h-3 bg-[#00ca4e] rounded-full cursor-pointer"
+              />
+            </div>
+
+            {/* Add spacing above New Note */}
+            <div className="mb-3">
+              <button
+                onClick={createNewNote}
+                className="w-full text-left px-4 py-3 border-b border-neutral-300 hover:bg-neutral-100 text-sm font-medium"
+              >
+                + New Note
+              </button>
+            </div>
+
+            {/* Notes list with consistent spacing */}
+            <div className="space-y-1">
+              {notes.map((note) => (
+                <div
+                  key={note.id}
+                  onClick={() => setActive(note.id)}
+                  className={`px-4 py-3 cursor-pointer border-b border-neutral-200 ${active === note.id
+                      ? "bg-yellow-100"
+                      : "hover:bg-neutral-100"
+                    }`}
+                >
+                  <div className="font-medium text-sm truncate">{note.title}</div>
+                  <div className="text-xs text-neutral-500 truncate">
+                    {note.date}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
           {/* Editor Pane */}
           <div className="flex-1 flex flex-col bg-white">
             {activeNote ? (
