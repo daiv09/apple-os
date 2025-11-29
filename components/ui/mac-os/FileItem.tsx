@@ -35,7 +35,7 @@ const FileItem: React.FC<FileItemProps> = ({
         customIcon={item.icon}
         size="md"
       />
-      <span className="mt-2 text-xs text-white text-center max-w-[80px] truncate">
+      <span className="mt-2 text-xs text-black text-center max-w-[80px] truncate">
         {item.name}
       </span>
     </div>

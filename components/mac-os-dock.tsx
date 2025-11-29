@@ -42,29 +42,29 @@ const MacOSDock: React.FC<MacOSDockProps> = ({
     if (width < 480) {
       // Mobile phones
       return {
-        baseIconSize: 40, // Use fixed steps for stability
-        maxScale: 1.4,
+        baseIconSize: 30, // Use fixed steps for stability
+        maxScale: 1.2,
         effectWidth: 160
       };
     } else if (width < 768) {
       // Tablets
       return {
-        baseIconSize: 48,
-        maxScale: 1.5,
+        baseIconSize: 38,
+        maxScale: 1.3,
         effectWidth: 200
       };
     } else if (width < 1024) {
       // Small laptops
       return {
-        baseIconSize: 56,
-        maxScale: 1.6,
+        baseIconSize: 46,
+        maxScale: 1.4,
         effectWidth: 240
       };
     } else {
       // Desktop
       return {
-        baseIconSize: 64,
-        maxScale: 1.8,
+        baseIconSize: 54,
+        maxScale: 1.6,
         effectWidth: 300
       };
     }

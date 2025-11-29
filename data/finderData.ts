@@ -5,21 +5,21 @@ export const desktopItems: FileItem[] = [
     id: 'folder-1',
     name: 'Projects',
     type: 'folder',
-    icon: '📁',
+    icon: '/folder.png',
     dateModified: 'Nov 22, 2025',
   },
   {
     id: 'folder-2',
     name: 'Documents',
     type: 'folder',
-    icon: '📁',
+    icon: '/folder.png',
     dateModified: 'Nov 20, 2025',
   },
   {
     id: 'folder-3',
     name: 'Photos',
     type: 'folder',
-    icon: '📁',
+    icon: '/folder.png',
     dateModified: 'Nov 18, 2025',
   },
   {
@@ -48,14 +48,14 @@ export const projectsFolder: FileItem[] = [
     id: 'project-1',
     name: 'Portfolio Website',
     type: 'folder',
-    icon: '📁',
+    icon: '/folder.png',
     dateModified: 'Nov 22, 2025',
   },
   {
     id: 'project-2',
     name: 'React App',
     type: 'folder',
-    icon: '📁',
+    icon: '/folder.png',
     dateModified: 'Nov 15, 2025',
   },
   {
@@ -112,8 +112,5 @@ export const photosFolder: FileItem[] = [
 ];
 
 export const folderStructure: { [key: string]: FileItem[] } = {
-  'Desktop': desktopItems,
   'Projects': projectsFolder,
-  'Documents': documentsFolder,
-  'Photos': photosFolder,
 };
