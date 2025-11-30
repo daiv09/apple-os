@@ -69,7 +69,7 @@ interface SpotlightSearchProps {
     onClose: () => void;
     // Note: The logic for simple menu actions (like dark-mode, reload) remains here.
     // The main app opening logic has been moved into this component to manage its state.
-    handleAppOrMenuAction: (actionId: string) => void; 
+    handleAppOrMenuAction: (actionId: string) => void;
 }
 
 // Map app IDs to their state setters for centralized management
@@ -98,7 +98,7 @@ const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ isOpen, onClose, hand
     const [activeIndex, setActiveIndex] = useState(0);
     const [autofillText, setAutofillText] = useState('');
 
-    
+
 
     // --- App State Management ---
     const [openApps, setOpenApps] = useState<string[]>([]);
@@ -126,7 +126,7 @@ const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ isOpen, onClose, hand
         showPhotos, showMusic, showMail,
         showCalendar, showFinder,
     };
-    
+
     // Ensure input is focused when open
     useEffect(() => {
         if (isOpen) {
@@ -187,7 +187,10 @@ const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ isOpen, onClose, hand
         const appConfig = appStateMap[appId as keyof typeof appStateMap];
         const isRunning = openApps.includes(appId);
         const isVisible = appStateValues[`show${appId.charAt(0).toUpperCase() + appId.slice(1)}` as keyof typeof appStateValues];
-        const isMinimized = appConfig?.isMinimized ? appStateValues[appConfig.isMinimized as keyof typeof appStateValues] : false;
+        let isMinimized = false;
+        if (appConfig && "isMinimized" in appConfig) {
+            isMinimized = appStateValues[appConfig.isMinimized] as boolean;
+        }
 
         // --- Handle Quit Action (if necessary) ---
         if (appId.startsWith("quit:")) {
@@ -195,9 +198,11 @@ const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ isOpen, onClose, hand
             setOpenApps((prev) => prev.filter((id) => id !== realId));
             const quitConfig = appStateMap[realId as keyof typeof appStateMap];
             if (quitConfig) {
-                appStateSetters[quitConfig.setter as keyof typeof appStateSetters](false);
-                if (quitConfig.setMinimized) {
-                    appStateSetters[quitConfig.setMinimized as keyof typeof appStateSetters](false);
+                appStateSetters[quitConfig.setter](false);
+
+                if ("setMinimized" in quitConfig) {
+                    const key = quitConfig.setMinimized;
+                    appStateSetters[key](false);
                 }
             }
             setCurrentApp("Finder");
@@ -230,7 +235,7 @@ const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ isOpen, onClose, hand
             appStateSetters[appConfig.setter as keyof typeof appStateSetters](true);
             setCurrentApp(appId.charAt(0).toUpperCase() + appId.slice(1));
         }
-        
+
     }, [openApps, setCurrentApp, appStateSetters, appStateValues]);
 
     // --- Action Handler ---
@@ -274,7 +279,7 @@ const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ isOpen, onClose, hand
                 }
                 break;
             case 'Tab':
-            case 'ArrowRight': 
+            case 'ArrowRight':
                 if (e.key === 'Tab') e.preventDefault();
                 if (autofillText.length > 0) {
                     setQuery(query + autofillText);
@@ -312,7 +317,6 @@ const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ isOpen, onClose, hand
             {openApps.includes("terminal") && showTerminal && !isTerminalMinimized && (
                 <TerminalPopup
                     onClose={() => handleAppClick("quit:terminal")}
-                    onMinimize={() => setIsTerminalMinimized(true)} // Added minimize handler
                 />
             )}
 
@@ -363,7 +367,6 @@ const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ isOpen, onClose, hand
             {openApps.includes("terminal") && showTerminal && !isTerminalMinimized && (
                 <TerminalPopup
                     onClose={() => handleAppClick("quit:terminal")}
-                    onMinimize={() => setIsTerminalMinimized(true)}
                 />
             )}
 
@@ -399,7 +402,7 @@ const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ isOpen, onClose, hand
             {openApps.includes("finder") && showFinder && (
                 <FinderPopup onClose={() => handleAppClick("quit:finder")} />
             )}
-            
+
 
             {/* --- SPOTLIGHT UI --- */}
             <div
