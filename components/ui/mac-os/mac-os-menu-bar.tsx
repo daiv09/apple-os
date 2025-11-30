@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useApp } from '@/contexts/AppContext';
 
@@ -22,8 +22,10 @@ interface MenuConfig {
 interface MacOSMenuBarProps {
   appName?: string;
   menus?: MenuConfig[];
-  onMenuAction?: (action: string) => void;
+  onMenuAction?: (action: string) => void | Promise<void>; // Use Promise<void> or void
   className?: string;
+  // 🛑 NEW PROP ADDED HERE:
+  isStaticBackgroundActive: boolean;
 }
 
 // Default Finder menus
@@ -65,7 +67,9 @@ const DEFAULT_MENUS: MenuConfig[] = [
       { label: "Enable Light Mode", action: "light-mode", shortcut: "⌥⌘1" },
       { label: "Enable Dark Mode", action: "dark-mode", shortcut: "⌥⌘2" },
       { label: "Separator", type: "separator" },
-
+      // We need placeholders for the dynamic background items
+      { label: "__BG_SWITCH_PLACEHOLDER__", action: "set-bg-switch", type: "item" },
+      { label: "Separator", type: "separator" },
       {
         label: "Show Only Projects",
         action: "filter-projects",
@@ -122,7 +126,7 @@ const MenuDropdown: React.FC<MenuDropdownProps> = ({
   onClose,
   items,
   position,
-  onAction,
+  onAction
 }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -181,7 +185,8 @@ const MenuDropdown: React.FC<MenuDropdownProps> = ({
           if (item.type === "separator") {
             return <div key={index} className="h-px bg-white/15 mx-2 my-1" />;
           }
-
+          // This check prevents rendering the placeholder item
+          if (item.action === "set-bg-switch-placeholder") return null;
           return (
             <div
               key={index}
@@ -234,16 +239,50 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
   menus = DEFAULT_MENUS,
   onMenuAction,
   className = "",
+  isStaticBackgroundActive
 }) => {
   const { currentApp, setCurrentApp } = useApp(); // Get current app from context
   const router = useRouter();
   const pathname = usePathname(); // Add usePathname to track route changes
   const [scale, setScale] = useState(1);
 
+  // --- FUNCTIONALITY: Dynamic Menu Configuration (Moved here) ---
+  const dynamicMenus = useMemo(() => {
+    const currentMenus = JSON.parse(JSON.stringify(menus)) as MenuConfig[];
+
+    const viewMenu = currentMenus.find(m => m.label === "View");
+
+    if (viewMenu && viewMenu.items) {
+
+      // Determine the label and action based on the current state
+      const newBgItem: MenuItemOption = isStaticBackgroundActive
+        ? { label: "Switch to Video Background", action: "set-bg-video" }
+        : { label: "Switch to Static Background", action: "set-bg-static" };
+
+      // Find the placeholder item index
+      const placeholderIndex = viewMenu.items.findIndex(
+        i => i.label === "__BG_SWITCH_PLACEHOLDER__"
+      );
+
+      if (placeholderIndex !== -1) {
+        // Replace the placeholder with the new, dynamic item
+        viewMenu.items[placeholderIndex] = newBgItem;
+      }
+
+      // 🛑 Critical: Filter out any old/redundant placeholder items if they exist
+      viewMenu.items = viewMenu.items.filter(
+        item => item.label !== "__BG_SWITCH_PLACEHOLDER__"
+      );
+    }
+
+    return currentMenus;
+  }, [menus, isStaticBackgroundActive]);
+  // -----------------------------------------------------------------
+
   // --- FUNCTIONALITY: Update App Name based on Route ---
   useEffect(() => {
     if (!pathname) return;
-    
+
     let name = "Portfolio";
     if (pathname.includes("projects")) name = "VS Code";
     else if (pathname.includes("contact")) name = "Mail";
@@ -251,7 +290,7 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
     else if (pathname.includes("designs")) name = "Figma";
     else if (pathname.includes("experience")) name = "Calendar";
     else if (pathname.includes("resume")) name = "Preview";
-    
+
     // Only update if it's different to avoid loops
     if (currentApp !== name) {
       setCurrentApp(name);
@@ -274,7 +313,7 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
     window.addEventListener("resize", updateScale);
     return () => window.removeEventListener("resize", updateScale);
   }, []);
-  
+
   const [currentTime, setCurrentTime] = useState("");
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
@@ -365,7 +404,7 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
         await navigator.clipboard.writeText("daiwiikharihar@gmail.com"); // Replace with actual email
         // alert("Email copied to clipboard"); 
       }
-      
+
       if (action === "copy-phone") {
         await navigator.clipboard.writeText("+91 7755921891"); // Replace with actual phone
         // alert("Phone number copied to clipboard");
@@ -426,17 +465,26 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
         // Since we don't have a complex global context, we use a prompt or dispatch event
         // If you add the Spotlight component later, listen for this event:
         window.dispatchEvent(new CustomEvent('toggle-spotlight'));
-        
+
         // Temporary fallback if no event listener handles it
         // const query = prompt("Quick Search (Pages, Projects...):");
         // if (query) router.push(`/search?q=${query}`);
       }
-      
+
       // ----------- ABOUT -----------
       if (action === "about-portfolio") {
         alert("Daiwiik Harihar's Portfolio\nVersion 2.0.0 (Build 2025)\n\nBuilt with Next.js, Tailwind, and React.");
       }
+      // ----------- BACKGROUND SWITCH -----------
+      if (action === "set-bg-static") {
+        // This will be handled by the parent component (Home.tsx)
+        // We rely on the final onMenuAction call below.
+      }
 
+      if (action === "set-bg-video") {
+        // This will be handled by the parent component (Home.tsx)
+        // We rely on the final onMenuAction call below.
+      }
       // Trigger custom callback if parent wants it
       onMenuAction?.(action);
     },
@@ -448,11 +496,11 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       // Helper to check for Command (Mac) or Ctrl (Windows)
       const isCmd = e.metaKey || e.ctrlKey;
-      
+
       if (!isCmd) return;
 
-      switch(e.key.toLowerCase()) {
-        case 'k': 
+      switch (e.key.toLowerCase()) {
+        case 'k':
           e.preventDefault();
           handleMenuAction('search-portfolio'); // or contact-me based on menu config
           break;
@@ -470,8 +518,8 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
           break;
         case 'r':
           if (!e.shiftKey) { // CMD+R is reload naturally, but we can intercept if needed
-             // let browser handle reload, or:
-             // e.preventDefault(); handleMenuAction('reload-portfolio');
+            // let browser handle reload, or:
+            // e.preventDefault(); handleMenuAction('reload-portfolio');
           }
           break;
         // Add more shortcuts as defined in your DEFAULT_MENUS
@@ -532,7 +580,6 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
   );
 
   const closeDropdown = useCallback(() => setActiveMenu(null), []);
-
   return (
     <div style={{ position: "relative" }}>
       {/* Responsive scale wrapper */}
@@ -592,9 +639,9 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
                 {currentApp || "Portfolio"}
               </span>
 
-              {/* Menu Items */}
+              {/* Menu Items 🛑 Use dynamicMenus here 🛑 */}
               <div className="flex items-center space-x-6">
-                {menus.map((menu) => (
+                {dynamicMenus.map((menu) => (
                   <span
                     key={menu.label}
                     ref={(el) => {
@@ -683,8 +730,20 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
         onAction={handleMenuAction}
       />
 
-      {/* OTHER MENUS */}
+      {/* OTHER MENUS
       {menus.map((menu) => (
+        <MenuDropdown
+          key={menu.label}
+          isOpen={activeMenu === menu.label}
+          onClose={closeDropdown}
+          items={menu.items ?? []}
+          position={dropdownPosition}
+          onAction={handleMenuAction}
+        />
+      ))} */}
+
+      {/* OTHER MENUS - 🛑 Use dynamicMenus here 🛑 */}
+      {dynamicMenus.map((menu) => (
         <MenuDropdown
           key={menu.label}
           isOpen={activeMenu === menu.label}

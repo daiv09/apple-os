@@ -98,6 +98,8 @@ const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ isOpen, onClose, hand
     const [activeIndex, setActiveIndex] = useState(0);
     const [autofillText, setAutofillText] = useState('');
 
+    
+
     // --- App State Management ---
     const [openApps, setOpenApps] = useState<string[]>([]);
     const [showTerminal, setShowTerminal] = useState(false);

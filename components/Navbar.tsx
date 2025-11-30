@@ -5,9 +5,12 @@ import { useFullscreen } from "@/app/FullscreenContext";
 
 interface NavbarProps {
   onVisibilityChange?: (visible: boolean) => void;
+  onMenuAction: (actionId: string) => Promise<void>;
+  // 🛑 Pass this prop through
+  isStaticBackgroundActive: boolean;
 }
 
-export default function Navbar({ onVisibilityChange }: NavbarProps) {
+export default function Navbar({ onVisibilityChange, onMenuAction, isStaticBackgroundActive }: NavbarProps) {
   const { isFullscreen, setNavbarVisible } = useFullscreen();
   const [showBar, setShowBar] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -95,7 +98,9 @@ export default function Navbar({ onVisibilityChange }: NavbarProps) {
     >
       <div style={{ width: "100%", padding: isMobile ? "0 4px" : "0 16px" }}>
         <MacOSMenuBar
-          onMenuAction={(action) => console.log("Menu action:", action)}
+          onMenuAction={onMenuAction} // 🛑 Pass the handler received from the parent
+          // 🛑 Pass the prop down to MacOSMenuBar
+          isStaticBackgroundActive={isStaticBackgroundActive}
         />
       </div>
     </div>

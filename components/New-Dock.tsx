@@ -68,9 +68,10 @@ type AppClickHandler = (appId: string) => void;
 // Define the component props
 interface NewDockProps {
   exposeAppClickHandler: React.Dispatch<React.SetStateAction<AppClickHandler | null>>;
+  isStaticBackgroundActive: boolean; // Optional prop for static background state
 }
 
-const NewDock: React.FC<NewDockProps> = ({ exposeAppClickHandler }) => { // Added exposeAppClickHandler prop
+const NewDock: React.FC<NewDockProps> = ({ exposeAppClickHandler, isStaticBackgroundActive }) => { // Added exposeAppClickHandler prop
   const [openApps, setOpenApps] = useState<string[]>([]);
   const [showTerminal, setShowTerminal] = useState(false);
   const [isTerminalMinimized, setIsTerminalMinimized] = useState(false);
@@ -129,11 +130,11 @@ const NewDock: React.FC<NewDockProps> = ({ exposeAppClickHandler }) => { // Adde
   }, [isFullscreen, setDockVisible]);
 
   // --- CORE APP CLICK HANDLER (Made into useCallback for stability) ---
-  const handleAppClick = useCallback((appId: string | null | undefined) => {
-    // 🔑 FIX: Check if appId is valid before proceeding
-    if (!appId || typeof appId !== 'string') {
+  const handleAppClick = useCallback((appId: string) => {
+    // 🔑 FIX: Robustly check if appId is a valid string
+    if (typeof appId !== 'string' || !appId.trim()) {
       console.error("handleAppClick received invalid appId:", appId);
-      return; // Exit function if appId is null, undefined, or not a string
+      return; // Stop execution if the ID is invalid
     }
 
     // Handle quit action
@@ -413,21 +414,21 @@ const NewDock: React.FC<NewDockProps> = ({ exposeAppClickHandler }) => { // Adde
     exposeAppClickHandler(handleAppClick);
   }, [exposeAppClickHandler, handleAppClick]);
 
-
+  const filteredApps = sampleApps.filter(app => app && app.id && typeof app.id === 'string');
   return (
     <>
       {/* Terminal Popup (only shown if running AND not minimized) */}
       {openApps.includes("terminal") && showTerminal && !isTerminalMinimized && (
-          <TerminalPopup
-            onClose={() => {
-              setShowTerminal(false);
-              setIsTerminalMinimized(false);
-              setOpenApps((prev) => prev.filter((id) => id !== "terminal")); // remove dot
-              setDockVisible(true);
-              setCurrentApp("Finder");
-            }}
-          />
-        )}
+        <TerminalPopup
+          onClose={() => {
+            setShowTerminal(false);
+            setIsTerminalMinimized(false);
+            setOpenApps((prev) => prev.filter((id) => id !== "terminal")); // remove dot
+            setDockVisible(true);
+            setCurrentApp("Finder");
+          }}
+        />
+      )}
 
       {/* Notes Popup (only shown if running) */}
       {openApps.includes("notes") && showNotes && (
@@ -538,14 +539,14 @@ const NewDock: React.FC<NewDockProps> = ({ exposeAppClickHandler }) => { // Adde
       <div
         ref={dockRef}
         className={`
-          fixed left-0 w-full flex items-center justify-center z-[9999]
-          transition-all duration-300
-          ${dockVisible ? "bottom-0 opacity-100" : "-bottom-20 opacity-0 pointer-events-none"}
-        `}
+    fixed left-0 w-full flex items-center justify-center z-[9999] // 🛑 Keep z-index here
+    transition-all duration-300
+    ${dockVisible ? "bottom-0 opacity-100" : "-bottom-20 opacity-0 pointer-events-none"}
+  `}
         style={{ height: "80px" }}
       >
         <MacOSDock
-          apps={sampleApps}
+          apps={filteredApps}
           onAppClick={handleAppClick}
           openApps={openApps}
         />
