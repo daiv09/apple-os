@@ -5,11 +5,10 @@ import { FullscreenProvider } from "./FullscreenContext";
 import { AppProvider } from '@/contexts/AppContext';
 import {LayoutClient}  from './LayoutClient';
 import { headers } from 'next/headers';
-import { userAgent } from 'next/server';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  subsets: ["latin"], 
 });
 
 const geistMono = Geist_Mono({
