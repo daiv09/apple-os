@@ -132,16 +132,16 @@ const NewDock: React.FC<NewDockProps> = ({ exposeAppClickHandler }) => { // Adde
   const handleAppClick = useCallback((appId: string | null | undefined) => {
     // 🔑 FIX: Check if appId is valid before proceeding
     if (!appId || typeof appId !== 'string') {
-        console.error("handleAppClick received invalid appId:", appId);
-        return; // Exit function if appId is null, undefined, or not a string
+      console.error("handleAppClick received invalid appId:", appId);
+      return; // Exit function if appId is null, undefined, or not a string
     }
-    
+
     // Handle quit action
     if (appId.startsWith("quit:")) {
-        const realId = appId.replace("quit:", "");
+      const realId = appId.replace("quit:", "");
 
-        // Remove from open apps
-        setOpenApps((prev) => prev.filter((id) => id !== realId));
+      // Remove from open apps
+      setOpenApps((prev) => prev.filter((id) => id !== realId));
 
       // Close specific popups and reset to Finder if needed
       if (realId === "terminal") {
@@ -417,9 +417,7 @@ const NewDock: React.FC<NewDockProps> = ({ exposeAppClickHandler }) => { // Adde
   return (
     <>
       {/* Terminal Popup (only shown if running AND not minimized) */}
-      {openApps.includes("terminal") &&
-        showTerminal &&
-        !isTerminalMinimized && (
+      {openApps.includes("terminal") && showTerminal && !isTerminalMinimized && (
           <TerminalPopup
             onClose={() => {
               setShowTerminal(false);
