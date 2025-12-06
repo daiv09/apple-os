@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { useFullscreen } from "@/app/FullscreenContext";
+import Image from "next/image";
 
 interface PhotosPopupProps {
   onClose: () => void;
@@ -121,8 +122,11 @@ const PhotosPopup = ({ onClose }: PhotosPopupProps) => {
             {/* CONTENT AREA */}
             <div className="flex-1 overflow-y-auto p-8">
               <div className="inline-block border-4 rounded-xl p-2 shadow-lg">
-                <img
+                <Image
                   src="/Photo.jpeg"
+                  alt="Photo"
+                  width={60}
+                  height={60}
                   className="w-60 h-auto rounded-lg shadow"
                 />
               </div>

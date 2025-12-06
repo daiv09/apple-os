@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { useFullscreen } from "@/app/FullscreenContext";
+import Image from "next/image";
 
 interface MusicPopupProps {
   onClose: () => void;
@@ -115,13 +116,19 @@ const MusicPopup = ({ onClose }: MusicPopupProps) => {
 
               <div className="px-8 pb-24">
                 {/* Big Apple Music banner */}
-                <img
+                <Image
                   src="/apple-music.jpg"
+                  alt="Apple Music Banner"
+                  width={960}
+                  height={224}
                   className="w-full h-56 object-cover rounded-2xl shadow"
                 />
 
                 {/* Secondary banner */}
-                <img
+                <Image
+                  alt="Music Banner"
+                  width={960}
+                  height={176}
                   src="/music-banner.jpg"
                   className="w-full h-44 object-cover rounded-2xl shadow mt-6"
                 />

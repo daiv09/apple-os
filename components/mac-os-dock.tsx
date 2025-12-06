@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 
 // Types for the component
@@ -281,7 +282,7 @@ const MacOSDock: React.FC<MacOSDockProps> = ({
                 pointerEvents: 'auto'
               }}
             >
-              <img
+              <Image
                 src={app.icon}
                 alt={app.name}
                 width={scaledSize}

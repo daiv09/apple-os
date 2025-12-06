@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X } from 'lucide-react';
+import Image from 'next/image';
 
 /**
  * SphereImageGrid - Interactive 3D Image Sphere Component
@@ -530,7 +531,7 @@ const SphereImageGrid: React.FC<SphereImageGridProps> = ({
         onClick={() => setSelectedImage(image)}
       >
         <div className="relative w-full h-full rounded-full overflow-hidden shadow-lg border-2 border-white/20">
-          <img
+          <Image
             src={image.src}
             alt={image.alt}
             className="w-full h-full object-cover"

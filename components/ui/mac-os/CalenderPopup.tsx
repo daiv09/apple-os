@@ -671,7 +671,7 @@ function buildMonthGrid(base: Date) {
   const startDate = new Date(firstOfMonth);
   startDate.setDate(firstOfMonth.getDate() - startDay); // start on Sunday of the week containing 1st
   const grid: { date: Date; inMonth: boolean }[][] = [];
-  let cur = new Date(startDate);
+  const cur = new Date(startDate);
   for (let r = 0; r < 6; r++) {
     const row: { date: Date; inMonth: boolean }[] = [];
     for (let c = 0; c < 7; c++) {

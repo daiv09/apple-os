@@ -34,7 +34,7 @@ export default function HeroSection() {
         {
           id: "step-1",
           title: "Upload your concept",
-          text: "Start with any visual — a logo, sketch, or product photo. We’ll analyze it to set your creative tone.",
+          text: `Start with any visual — a logo, sketch, or product photo. We&apos;ll analyze it to set your creative tone.`,
         },
         {
           id: "step-2",

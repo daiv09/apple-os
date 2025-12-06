@@ -19,11 +19,12 @@ const MobileWarning = () => {
   const [copied, setCopied] = useState(false);
   const currentUrl = typeof window !== 'undefined' ? window.location.href : '...';
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(currentUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  /* const handleCopyLink = () => {
+  //   navigator.clipboard.writeText(currentUrl);
+  //   setCopied(true);
+  //   setTimeout(() => setCopied(false), 2000);
   };
+  */
 
   return (
     <motion.div

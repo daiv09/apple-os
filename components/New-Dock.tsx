@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import { useRouter } from "next/navigation"; // ⬅️ add this
 import MacOSDock from "./mac-os-dock";
 import TerminalPopup from "./ui/TerminalPopup";
 import NotesPopup from "./ui/mac-os/NotesPopup";
@@ -13,7 +14,6 @@ import FinderPopup from "./ui/mac-os/FinderPopup";
 import { useFullscreen } from "@/app/FullscreenContext";
 import { useApp } from '@/contexts/AppContext';
 
-// Sample apps (unchanged)
 const sampleApps = [
   {
     id: "finder",
@@ -87,6 +87,7 @@ const NewDock: React.FC<NewDockProps> = ({ exposeAppClickHandler, isStaticBackgr
 
   const dockRef = useRef<HTMLDivElement>(null);
 
+  const router = useRouter();               // ⬅️ router instance
   const { setCurrentApp } = useApp();
   const { isFullscreen, dockVisible, setDockVisible } = useFullscreen();
 
@@ -135,6 +136,28 @@ const NewDock: React.FC<NewDockProps> = ({ exposeAppClickHandler, isStaticBackgr
     if (typeof appId !== 'string' || !appId.trim()) {
       console.error("handleAppClick received invalid appId:", appId);
       return; // Stop execution if the ID is invalid
+    }
+
+    // 🔹 Global window actions from menu bar / elsewhere
+    if (appId === "minimize-all" || appId === "close-all") {
+      // Go "home" in an SPA context
+      router.push("/");
+
+      // Close/minimize all app windows in state
+      setShowTerminal(false);
+      setIsTerminalMinimized(false);
+      setShowNotes(false);
+      setShowSafari(false);
+      setShowCalculator(false);
+      setShowPhotos(false);
+      setShowMusic(false);
+      setShowMail(false);
+      setShowCalendar(false);
+      setShowFinder(false);
+
+      setOpenApps([]);          // clear dock dots
+      setCurrentApp("Finder");  // reset current app label
+      return;
     }
 
     // Handle quit action

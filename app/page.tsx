@@ -1,7 +1,7 @@
 // src/app/page.tsx (Corrected)
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Navbar from "@/components/Navbar";
 import NewDock from "@/components/New-Dock"; // Assuming NewDock exports a single component
 import SpotlightSearch from "@/components/ui/mac-os/SpotlightSearch";
@@ -36,12 +36,10 @@ export default function Home() {
     }
 
     // 2. DOCK APP ACTION (Launch or Focus an App)
-    // Define the set of valid Dock App IDs
     const dockAppIds = ['finder', 'calculator', 'terminal', 'mail', 'notes', 'safari', 'photos', 'music', 'calendar'];
     const isDockApp = dockAppIds.includes(actionId);
 
     // 🔑 THE CRITICAL FIX: Ensure the handler is set AND the actionId is a valid dock app.
-    // If the handler is null OR the action is not a dock app, we skip this block.
     if (isDockApp) {
       // 🛑 Check 1: Is the handler ready?
       if (!newDockAppClickHandler) {
@@ -50,7 +48,6 @@ export default function Home() {
       }
 
       // 🛑 Check 2: Is the actionId valid (not null/undefined/empty string)
-      // Although your code defines actionId as a string, defensive coding here is good practice.
       if (typeof actionId === 'string' && actionId.trim().length > 0) {
         newDockAppClickHandler(actionId); // Call the handler with the valid ID
       } else {
@@ -61,8 +58,6 @@ export default function Home() {
     // -----------------------------------------------------------
 
     // 3. MENU BAR ACTION (System/Navigation)
-    // ... (rest of the Menu Bar logic is fine)
-    // ...
   }, [router, newDockAppClickHandler]); // Dependencies are correct
   // -----------------------------------------------------------
 
