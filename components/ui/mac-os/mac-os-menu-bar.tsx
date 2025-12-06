@@ -28,6 +28,181 @@ interface MacOSMenuBarProps {
   isStaticBackgroundActive: boolean;
 }
 
+// --- Types for Battery API (Chrome/Edge/Android only) ---
+interface BatteryManager extends EventTarget {
+  charging: boolean;
+  chargingTime: number;
+  dischargingTime: number;
+  level: number;
+  addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+  removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+}
+
+interface NavigatorWithBattery extends Navigator {
+  getBattery?: () => Promise<BatteryManager>;
+}
+interface StatusDropdownProps {
+  type: "wifi" | "battery" | "clock" | null;
+  isOpen: boolean;
+  onClose: () => void;
+  position: { x: number; y: number };
+}
+
+const StatusDropdown: React.FC<StatusDropdownProps> = ({ type, isOpen, onClose, position }) => {
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const battery = useBattery();
+  const [wifiOn, setWifiOn] = useState(true);
+
+  // Close on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+    if (isOpen) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !type) return null;
+
+  return (
+    <div
+      ref={dropdownRef}
+      className="absolute backdrop-blur-xl z-[70] text-white"
+      style={{
+        left: type === 'clock' ? 'auto' : `${position.x}px`,
+        right: type === 'clock' ? '10px' : 'auto', // Anchor clock to right edge
+        top: `${position.y}px`,
+        background: "rgba(40, 40, 40, 0.9)",
+        border: "1px solid rgba(255, 255, 255, 0.2)",
+        borderRadius: "10px",
+        boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
+        minWidth: "260px",
+        padding: "8px",
+        animation: "menuFadeIn 0.1s ease-out forwards",
+      }}
+    >
+      {/* --- BATTERY MENU --- */}
+      {type === "battery" && (
+        <div className="space-y-2">
+          <div className="px-3 py-1 flex justify-between items-center opacity-50 text-xs font-medium">
+            <span>Battery</span>
+            <span>{Math.round((battery?.level || 1) * 100)}%</span>
+          </div>
+          <div className="px-3 text-sm text-gray-300">
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 rounded-full bg-gray-500/30 flex items-center justify-center">
+                {battery?.charging ? "⚡" : "🔋"}
+              </div>
+              <div className="flex flex-col">
+                <span className="text-white">Power Source:</span>
+                <span className="text-xs text-gray-400">{battery?.charging ? "Power Adapter" : "Battery"}</span>
+              </div>
+            </div>
+          </div>
+          <div className="h-px bg-white/10 my-2" />
+          <div className="px-3 py-1 text-sm hover:bg-blue-600/80 rounded cursor-pointer transition-colors">
+            Battery Preferences...
+          </div>
+        </div>
+      )}
+
+      {/* --- WIFI MENU --- */}
+      {type === "wifi" && (
+        <div className="select-none">
+          <div className="px-3 py-2 flex justify-between items-center">
+            <span className="font-semibold text-sm">Wi-Fi</span>
+            <div
+              onClick={() => setWifiOn(!wifiOn)}
+              className={`w-9 h-5 rounded-full p-0.5 cursor-pointer transition-colors duration-300 ${wifiOn ? 'bg-blue-500' : 'bg-gray-500'}`}
+            >
+              <div className={`w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-300 ${wifiOn ? 'translate-x-4' : 'translate-x-0'}`} />
+            </div>
+          </div>
+
+          <div className="h-px bg-white/10 my-2" />
+
+          <div className={`px-3 py-1 text-sm flex items-center justify-between group rounded hover:bg-blue-600/80 cursor-pointer ${!wifiOn && 'opacity-50 pointer-events-none'}`}>
+            <div className="flex items-center gap-2">
+              <span className="text-blue-400">✓</span>
+              <span className="font-medium">Home_Network_5G</span>
+            </div>
+            <span className="text-xs text-gray-400 group-hover:text-white">🔒</span>
+          </div>
+
+          <div className={`mt-1 space-y-1 ${!wifiOn && 'opacity-50 pointer-events-none'}`}>
+            <div className="px-3 py-1 text-sm flex items-center justify-between hover:bg-blue-600/80 rounded cursor-pointer group">
+              <span className="pl-6">Starbucks WiFi</span>
+              <span className="text-xs text-gray-400 group-hover:text-white">🔒</span>
+            </div>
+          </div>
+
+          <div className="h-px bg-white/10 my-2" />
+          <div className="px-3 py-1 text-sm hover:bg-blue-600/80 rounded cursor-pointer transition-colors">
+            Network Preferences...
+          </div>
+        </div>
+      )}
+
+      {/* --- CLOCK MENU --- */}
+      {type === "clock" && (
+        <div className="p-2 w-[280px]">
+          <div className="flex flex-col mb-4 px-2">
+            <span className="text-red-500 font-bold text-lg">{new Date().toLocaleDateString('en-US', { weekday: 'long' })}</span>
+            <span className="text-3xl font-light text-white">{new Date().getDate()}</span>
+          </div>
+
+          <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-300">
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <span key={d} className="text-gray-500 font-bold">{d}</span>)}
+            {Array.from({ length: 30 }, (_, i) => i + 1).map(day => {
+              const isToday = day === new Date().getDate();
+              return (
+                <div key={day} className={`aspect-square flex items-center justify-center rounded-full ${isToday ? 'bg-red-500 text-white font-bold' : 'hover:bg-white/10'}`}>
+                  {day}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+// --- Hook: useBattery ---
+const useBattery = () => {
+  const [battery, setBattery] = useState<{ level: number; charging: boolean } | null>(null);
+
+  useEffect(() => {
+    const nav = navigator as NavigatorWithBattery;
+    if (!nav.getBattery) {
+      setBattery({ level: 1, charging: true }); // Fallback for Safari/Firefox
+      return;
+    }
+
+    let batt: BatteryManager;
+    const updateBattery = () => {
+      setBattery({ level: batt.level, charging: batt.charging });
+    };
+
+    nav.getBattery().then((b) => {
+      batt = b;
+      updateBattery();
+      batt.addEventListener("levelchange", updateBattery);
+      batt.addEventListener("chargingchange", updateBattery);
+    });
+
+    return () => {
+      if (batt) {
+        batt.removeEventListener("levelchange", updateBattery);
+        batt.removeEventListener("chargingchange", updateBattery);
+      }
+    };
+  }, []);
+
+  return battery;
+};
+
 // Default Finder menus
 const DEFAULT_MENUS: MenuConfig[] = [
   {
@@ -316,6 +491,8 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
 
   const [currentTime, setCurrentTime] = useState("");
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  // ... existing state ...
+  const [activeStatus, setActiveStatus] = useState<"wifi" | "battery" | "clock" | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
 
   const appleLogoRef = useRef<HTMLDivElement>(null);
@@ -337,6 +514,25 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
     const interval = setInterval(updateTime, 60000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleStatusClick = (type: "wifi" | "battery" | "clock", e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent bubbling
+
+    // If clicking the same one, close it
+    if (activeStatus === type) {
+      setActiveStatus(null);
+      return;
+    }
+
+    // Calculate position
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    // macOS menus align roughly with the icon, shifted slightly
+    setDropdownPosition({ x: rect.left - 100, y: 34 }); // -100 to shift left for right-aligned items
+    setActiveStatus(type);
+
+    // Close standard menus
+    setActiveMenu(null);
+  };
 
   // --- FUNCTIONALITY: Core Action Logic ---
   const handleMenuAction = useCallback(
@@ -491,45 +687,101 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
     [router, onMenuAction]
   );
 
-  // --- FUNCTIONALITY: Keyboard Shortcuts ---
+  // --- FUNCTIONALITY: Keyboard Shortcuts (Windows & Mac Support) ---
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Helper to check for Command (Mac) or Ctrl (Windows)
-      const isCmd = e.metaKey || e.ctrlKey;
+      const key = e.key.toLowerCase();
 
-      if (!isCmd) return;
+      // 1. Unify Modifiers
+      // Mac uses 'metaKey' (Command ⌘)
+      // Windows uses 'ctrlKey' (Control ^)
+      const isActionKey = e.metaKey || e.ctrlKey;
+      const isAlt = e.altKey; // Maps to Option (Mac) or Alt (Windows)
+      const isShift = e.shiftKey;
 
-      switch (e.key.toLowerCase()) {
-        case 'k':
+      // We only care if the primary action key (Cmd or Ctrl) is pressed
+      if (!isActionKey) return;
+
+      switch (key) {
+        // --- Navigation (Number Keys) ---
+        // Windows: Ctrl + 1 | Mac: Cmd + 1
+        case "1":
+          e.preventDefault(); // Prevents switching browser tabs
+          if (isAlt) handleMenuAction("light-mode"); // Ctrl + Alt + 1
+          else handleMenuAction("go-projects");      // Ctrl + 1
+          break;
+
+        case "2":
           e.preventDefault();
-          handleMenuAction('search-portfolio'); // or contact-me based on menu config
+          if (isAlt) handleMenuAction("dark-mode");  // Ctrl + Alt + 2
+          else handleMenuAction("go-skills");        // Ctrl + 2
           break;
-        case 's':
+
+        case "3":
           e.preventDefault();
-          handleMenuAction('download-resume');
+          if (isAlt) handleMenuAction("filter-projects"); // Ctrl + Alt + 3
+          else handleMenuAction("go-experience");         // Ctrl + 3
           break;
-        case 'p':
+
+        case "4":
           e.preventDefault();
-          handleMenuAction('print-page');
+          if (isAlt) handleMenuAction("filter-experience"); // Ctrl + Alt + 4
           break;
-        case 'm':
+
+        // --- Standard Actions ---
+        case "k": // Ctrl + K (Search)
+          e.preventDefault(); // Prevents browser search/duplicate tab
+          handleMenuAction("search-portfolio");
+          break;
+
+        case "s": // Ctrl + S (Save/Download)
+          e.preventDefault(); // Prevents "Save Webpage As..."
+          handleMenuAction("download-resume");
+          break;
+
+        case "p": // Ctrl + P (Print)
           e.preventDefault();
-          handleMenuAction('minimize-all');
+          handleMenuAction("print-page");
           break;
-        case 'r':
-          if (!e.shiftKey) { // CMD+R is reload naturally, but we can intercept if needed
-            // let browser handle reload, or:
-            // e.preventDefault(); handleMenuAction('reload-portfolio');
-          }
+
+        case "e": // Ctrl + E (Copy Email)
+          e.preventDefault(); // Prevents browser address bar focus
+          handleMenuAction("copy-email");
           break;
-        // Add more shortcuts as defined in your DEFAULT_MENUS
+
+        // --- Window / View Actions ---
+        case "m": // Ctrl + M (Minimize -> Go Home)
+          e.preventDefault();
+          handleMenuAction("minimize-all");
+          break;
+
+        case "w": // Ctrl + W (Close -> Go Home)
+          // Note: Browsers fight hard for Ctrl+W (Close Tab). 
+          // This prevents it in PWA mode or popup windows, but might not work in standard tabs.
+          e.preventDefault();
+          handleMenuAction("minimize-all");
+          break;
+
+        case "f": // Ctrl + F (Fullscreen)
+          // Standard Windows Fullscreen is F11, but we map Ctrl+F for consistency
+          e.preventDefault(); // Prevents "Find in page"
+          handleMenuAction("fullscreen");
+          break;
+
+        case "r": // Ctrl + R (Reload)
+          // Optional: Intercept reload
+          // e.preventDefault();
+          // handleMenuAction("reload-portfolio");
+          break;
+
+        default:
+          break;
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleMenuAction]);
-
 
   // Menu toggling logic (unchanged)
   const handleAppleMenuClick = useCallback(() => {
@@ -659,7 +911,9 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
             {/* Right section - status icons and clock */}
             <div className="flex items-center space-x-4">
               {/* Battery */}
-              <div className="cursor-pointer hover:opacity-80 transition-opacity duration-150">
+              <div
+                onClick={(e) => handleStatusClick("battery", e)}
+                className={`cursor-pointer hover:opacity-80 transition-opacity duration-150 ${activeStatus === 'battery' ? 'opacity-100 bg-white/10 rounded px-1' : 'hover:opacity-80'}`}>
                 <svg
                   width="26"
                   height="12"
@@ -669,24 +923,24 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
                 >
                   <path
                     d="M0 0 C0.82175217 -0.00511093 1.64350433 -0.01022186 2.49015808 -0.01548767 C5.19859152 -0.0293548 7.90676972 -0.02842931 10.61523438 -0.02612305 C12.50183201 -0.03001108 14.38842878 -0.03434597 16.27502441 -0.03910828 C20.22585897 -0.04656393 24.17660415 -0.04628359 28.12744141 -0.04101562 C33.18827521 -0.0352167 38.24874354 -0.05216538 43.30951691 -0.0753603 C47.20430639 -0.09009567 51.09900777 -0.09096969 54.99382019 -0.08785057 C56.85972315 -0.08836371 58.72563106 -0.09360009 60.59150696 -0.10366249 C63.20056908 -0.11600809 65.80891792 -0.10924706 68.41796875 -0.09765625 C69.18694992 -0.10529999 69.95593109 -0.11294373 70.74821472 -0.12081909 C76.48807519 -0.06449799 79.68979749 1.25547132 83.70898438 5.2746582 C85.12279298 9.05552515 84.88869294 13.09189823 84.91210938 17.07543945 C84.91780945 17.83003952 84.92350952 18.58463959 84.92938232 19.36210632 C84.93881056 20.95655932 84.94535764 22.55103161 84.94921875 24.14550781 C84.95890962 26.56846642 84.98994637 28.99057084 85.02148438 31.41333008 C85.02801682 32.96736153 85.03326635 34.52139902 85.03710938 36.07543945 C85.04945618 36.79234451 85.06180298 37.50924957 85.07452393 38.24787903 C85.05202575 43.40022518 84.24732046 46.86576899 81.70898438 51.2746582 C77.44198652 53.68062086 73.09614556 53.56449915 68.32617188 53.54931641 C67.49466614 53.55442734 66.6631604 53.55953827 65.80645752 53.56480408 C63.06555937 53.57867253 60.32491338 53.57774562 57.58398438 53.57543945 C55.6749665 53.57932741 53.76594949 53.58366229 51.85693359 53.58842468 C47.85902093 53.59588062 43.86119658 53.59559979 39.86328125 53.59033203 C34.74191497 53.58453311 29.62090983 53.60148166 24.49960327 53.6246767 C20.5584909 53.63941144 16.61746561 53.64028618 12.67633057 53.63716698 C10.788099 53.63768015 8.89986255 53.64291715 7.01165771 53.6529789 C4.37146537 53.66532324 1.73197803 53.65856418 -0.90820312 53.64697266 C-2.07570099 53.65843826 -2.07570099 53.65843826 -3.26678467 53.6701355 C-7.79019075 53.62626694 -10.68014088 53.04878224 -14.29101562 50.2746582 C-17.11730625 46.65525677 -16.59684928 42.17147887 -16.59179688 37.7824707 C-16.596082 36.95891083 -16.60036713 36.13535095 -16.6047821 35.28683472 C-16.61051687 33.54694537 -16.61103195 31.80703205 -16.60668945 30.06713867 C-16.60353488 27.4158396 -16.62697968 24.76566273 -16.65234375 22.11450195 C-16.65461749 20.42049294 -16.65531989 18.72648094 -16.65429688 17.0324707 C-16.66350662 16.24478302 -16.67271637 15.45709534 -16.6822052 14.64553833 C-16.64212062 9.83558309 -16.12088551 6.35019582 -13.29101562 2.2746582 C-9.00849445 -0.06521491 -4.75970999 -0.0153343 0 0 Z "
-                    fill="#FFFFFF"
+                    fill={activeStatus === 'battery' ? "#FFFFFF" : "#FFFFFF"}
                     transform="translate(31.291015625,14.725341796875)"
                   />
                   <path
                     d="M0 0 C1.03584732 -0.00571014 2.07169464 -0.01142029 3.13893127 -0.01730347 C4.26990234 -0.01842133 5.40087341 -0.01953918 6.56611633 -0.02069092 C8.35947166 -0.02813828 8.35947166 -0.02813828 10.1890564 -0.03573608 C13.4661846 -0.04783365 16.74327716 -0.05530034 20.02042365 -0.05974674 C22.07083709 -0.06268252 24.12124501 -0.06678835 26.17165565 -0.07125092 C32.59544399 -0.08492098 39.01921961 -0.09458922 45.44302148 -0.09845281 C52.84210819 -0.10292813 60.24100968 -0.1204535 67.6400401 -0.1494534 C73.36930485 -0.17112394 79.09851771 -0.18115999 84.82782298 -0.18249393 C88.24476141 -0.18353841 91.6615256 -0.18936922 95.07842064 -0.20731354 C98.89607549 -0.22441187 102.71328223 -0.22248399 106.53096008 -0.21600342 C107.65181 -0.2252182 108.77265991 -0.23443298 109.92747498 -0.243927 C117.95269142 -0.20135944 124.42140542 0.86173116 131.18452454 5.32794189 C136.30866063 10.6904099 138.96352158 16.97584486 139.03315735 24.39898682 C139.04276489 25.2305278 139.05237244 26.06206879 139.06227112 26.91880798 C139.06864594 28.2563488 139.06864594 28.2563488 139.07514954 29.62091064 C139.08084961 30.54833572 139.08654968 31.4757608 139.09242249 32.43128967 C139.10186112 34.39398055 139.10840195 36.35668719 139.11225891 38.31939697 C139.12193301 41.2997461 139.15295424 44.27939605 139.18452454 47.25958252 C139.19105839 49.17168782 139.19630736 51.08379804 139.20014954 52.99591064 C139.21249634 53.87748337 139.22484314 54.75905609 139.23756409 55.66734314 C139.21227077 62.80842015 138.04416634 69.6473711 133.62202454 75.45294189 C121.3613082 87.43500559 100.42474177 84.44038848 84.55952454 84.40606689 C82.33385679 84.40741811 80.10818933 84.40936241 77.88252258 84.41186523 C73.24325214 84.41479505 68.60405931 84.41058841 63.96479797 84.40118408 C58.06132833 84.38979096 52.15804063 84.396362 46.25457764 84.40832901 C41.6662411 84.41560584 37.07794667 84.41323313 32.48960876 84.40807343 C30.31462074 84.40675298 28.13962872 84.40832734 25.96464539 84.41303253 C-10.09097031 84.47394262 -10.09097031 84.47394262 -18.12797546 77.14044189 C-23.90359816 71.3648192 -25.45954292 64.46402857 -25.54481506 56.57830811 C-25.53874237 55.66037476 -25.53266968 54.74244141 -25.52641296 53.79669189 C-25.52928314 52.82816284 -25.53215332 51.85963379 -25.53511047 50.86175537 C-25.5371418 48.82459932 -25.5316775 46.78742334 -25.51908875 44.75030518 C-25.50302206 41.64943422 -25.51896955 38.54986653 -25.53813171 35.44903564 C-25.53614912 33.46075155 -25.5323051 31.47246825 -25.52641296 29.48419189 C-25.53248566 28.56625854 -25.53855835 27.6483252 -25.54481506 26.70257568 C-25.46603492 19.41721627 -24.07647694 14.03535838 -19.94047546 7.89044189 C-14.28843724 2.36400452 -7.83600922 0.02592702 0 0 Z M-12.12797546 14.82794189 C-16.85057138 22.64974138 -16.47096343 31.04435231 -16.44364929 39.92144775 C-16.4404874 42.06983139 -16.46401315 44.21683688 -16.48930359 46.36505127 C-16.72736225 58.22940199 -16.72736225 58.22940199 -11.85282898 68.71026611 C-5.34263349 74.74736513 2.67544426 74.43516039 10.98872375 74.4151001 C12.08719635 74.42021103 13.18566895 74.42532196 14.31742859 74.43058777 C17.93724565 74.44445184 21.55687163 74.44352931 25.17671204 74.44122314 C27.70105561 74.44511188 30.22539853 74.44944692 32.7497406 74.45420837 C38.03710827 74.4616638 43.32440627 74.46152321 48.61177063 74.45611572 C54.70516317 74.45007927 60.79832461 74.46238391 66.89167774 74.48368579 C72.77512247 74.50349016 78.65847729 74.5064679 84.54195023 74.50295067 C87.03533089 74.50346296 89.52871531 74.50868326 92.02207565 74.51876259 C95.51374184 74.5311454 99.00487808 74.52432362 102.49653625 74.51275635 C103.51916565 74.52040009 104.54179504 74.52804382 105.59541321 74.53591919 C113.22652315 74.48024712 120.0214064 73.74845424 125.80952454 68.45294189 C130.56241065 60.81951874 130.21555801 52.56684234 130.18769836 43.84161377 C130.18454163 41.77662136 130.20804614 39.71307024 130.23335266 37.64825439 C130.40830464 25.44302856 130.40830464 25.44302856 125.63227844 14.5022583 C119.1868619 8.43943647 110.09608162 8.84539037 101.84126282 8.86578369 C100.76375763 8.86067276 99.68625244 8.85556183 98.57609558 8.85029602 C95.03145213 8.83645148 91.48700424 8.83735298 87.94233704 8.83966064 C85.46665882 8.83577087 82.99098126 8.83143562 80.51530457 8.82667542 C75.33226862 8.81922422 70.14930081 8.81949652 64.96626282 8.82476807 C58.34000023 8.83056079 51.71401734 8.81363077 45.08780098 8.79042339 C39.97640872 8.77565762 34.86508337 8.77481825 29.75367355 8.77793312 C27.31135886 8.77742133 24.86904028 8.77221043 22.42674637 8.7621212 C19.0048403 8.74971941 15.58347342 8.75657139 12.16157532 8.76812744 C11.16281372 8.7604837 10.16405212 8.75283997 9.13502502 8.7449646 C1.89083821 8.7987594 -6.88444207 9.18240837 -12.12797546 14.82794189 Z "
-                    fill="#FFFFFF"
+                    fill={activeStatus === 'battery' ? "#FFFFFF" : "#FFFFFF"}
                     transform="translate(25.127975463867188,-0.14044189453125)"
                   />
                   <path
                     d="M0 0 C6.61183005 2.20394335 7.27129348 2.77981088 11 8 C12.63537738 12.90613215 12.50113348 17.88031198 12 23 C10.1875 26.5625 10.1875 26.5625 8 29 C7.2884375 29.8971875 7.2884375 29.8971875 6.5625 30.8125 C5 32 5 32 0 33 C0 22.11 0 11.22 0 0 Z "
-                    fill="#FFFFFF"
+                    fill={activeStatus === 'battery' ? "#FFFFFF" : "#FFFFFF"}
                     transform="translate(171,25)"
                   />
                 </svg>
               </div>
 
               {/* WiFi */}
-              <div className="cursor-pointer hover:opacity-80 transition-opacity duration-150">
+              <div onClick={(e) => handleStatusClick("wifi", e)} className="cursor-pointer hover:opacity-80 transition-opacity duration-150">
                 <svg
                   width="20"
                   height="14"
@@ -713,7 +967,7 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
               </div>
 
               {/* Clock */}
-              <span className="text-white text-sm font-medium select-none ml-1 cursor-pointer hover:opacity-80 transition-opacity duration-150">
+              <span onClick={(e) => handleStatusClick("clock", e)} className={`text-white text-sm font-medium select-none ml-1 cursor-pointer hover:opacity-80 transition-opacity duration-150 ${activeStatus === 'clock' ? 'opacity-100 bg-white/10 rounded px-1' : 'hover:opacity-80'}`}>
                 {currentTime}
               </span>
             </div>
@@ -753,6 +1007,14 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
           onAction={handleMenuAction}
         />
       ))}
+
+      {/* 🛑 ADD THIS SECTION HERE TO FIX THE ISSUE 🛑 */}
+      <StatusDropdown
+        type={activeStatus}
+        isOpen={!!activeStatus}
+        onClose={() => setActiveStatus(null)}
+        position={dropdownPosition}
+      />
     </div>
   );
 };
