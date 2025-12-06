@@ -45,11 +45,6 @@ const SafariPopup = ({ onClose }: SafariPopupProps) => {
 
   const activeTab = tabs.find((t) => t.id === activeTabId)!;
 
-  /*
-  ─────────────────────────────────────
-  SEARCH LOGIC (Updated)
-  ─────────────────────────────────────
-  */
   const getSmartUrl = (input: string) => {
     if (!input) return "https://www.google.com/webhp?igu=1";
 
@@ -67,11 +62,6 @@ const SafariPopup = ({ onClose }: SafariPopupProps) => {
     return `https://www.google.com/search?q=${encodeURIComponent(input)}&igu=1`;
   };
 
-  /*
-  ─────────────────────────────────────
-  TAB ACTIONS
-  ─────────────────────────────────────
-  */
   const createNewTab = () => {
     const id = crypto.randomUUID();
     const newTab: TabData = {
