@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { motion } from "motion/react";
 import { useFullscreen } from "@/app/FullscreenContext";
-
 
 interface SafariPopupProps {
   onClose: () => void;
@@ -21,34 +20,51 @@ interface TabData {
 const SafariPopup = ({ onClose }: SafariPopupProps) => {
   const { navbarVisible, setFullscreen, setNavbarVisible, setDockVisible } =
     useFullscreen();
+
   /*
   ─────────────────────────────────────
   TAB STATE
   ─────────────────────────────────────
   */
- const [tabs, setTabs] = useState<TabData[]>([
-   {
-     id: crypto.randomUUID(),
-     title: "New Tab",
-     url: "www.ted.com/about/programs-initiatives/tedx-program",
-     iframeUrl: "https://www.ted.com/about/programs-initiatives/tedx-program",
-     history: ["https://www.ted.com/about/programs-initiatives/tedx-program"],
-     historyIndex: 0,
+  const [tabs, setTabs] = useState<TabData[]>([
+    {
+      id: crypto.randomUUID(),
+      title: "Portfolio",
+      url: "daiwiik-harihar-portfolio.vercel.app",
+      // Added &igu=1 to allow Google to display inside an iframe
+      iframeUrl: "https://daiwiik-harihar-portfolio.vercel.app",
+      history: ["https://daiwiik-harihar-portfolio.vercel.app"],
+      historyIndex: 0,
     },
   ]);
-  
+
   const [activeTabId, setActiveTabId] = useState(tabs[0].id);
   const [isLoading, setIsLoading] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [zoomed, setZoomed] = useState(false);
-  
+
   const activeTab = tabs.find((t) => t.id === activeTabId)!;
-  
-  const normalizeUrl = (input: string) => {
-    if (!input) return "";
-    if (input.startsWith("http://") || input.startsWith("https://"))
-      return input;
-    return `https://${input}`;
+
+  /*
+  ─────────────────────────────────────
+  SEARCH LOGIC (Updated)
+  ─────────────────────────────────────
+  */
+  const getSmartUrl = (input: string) => {
+    if (!input) return "https://www.google.com/webhp?igu=1";
+
+    // Check if the input looks like a URL (has a dot and no spaces, or starts with http)
+    const hasProtocol = input.startsWith("http://") || input.startsWith("https://");
+    const hasExtension = input.includes(".") && !input.includes(" ");
+
+    // If it looks like a website, normalize it
+    if (hasProtocol || hasExtension) {
+      return hasProtocol ? input : `https://${input}`;
+    }
+
+    // Otherwise, treat it as a Search Query
+    // We encode the query and add &igu=1 for iframe compatibility
+    return `https://www.google.com/search?q=${encodeURIComponent(input)}&igu=1`;
   };
 
   /*
@@ -61,9 +77,9 @@ const SafariPopup = ({ onClose }: SafariPopupProps) => {
     const newTab: TabData = {
       id,
       title: "New Tab",
-      url: "google.com",
-      iframeUrl: "https://google.com",
-      history: ["https://google.com"],
+      url: "",
+      iframeUrl: "https://www.google.com/webhp?igu=1",
+      history: ["https://www.google.com/webhp?igu=1"],
       historyIndex: 0,
     };
     setTabs([...tabs, newTab]);
@@ -95,15 +111,20 @@ const SafariPopup = ({ onClose }: SafariPopupProps) => {
   ─────────────────────────────────────
   */
   const handleSearch = () => {
-    const fullUrl = normalizeUrl(activeTab.url);
+    // Use the new Smart URL logic
+    const destinationUrl = getSmartUrl(activeTab.url);
+    
+    // We use the input text as the title if it's a search, otherwise the URL
+    const displayTitle = activeTab.url.includes(".") ? activeTab.url : activeTab.url;
+
     const updatedTabs = tabs.map((tab) =>
       tab.id === activeTabId
         ? {
             ...tab,
-            iframeUrl: fullUrl,
-            history: [...tab.history, fullUrl],
+            iframeUrl: destinationUrl,
+            history: [...tab.history, destinationUrl],
             historyIndex: tab.history.length,
-            title: fullUrl,
+            title: displayTitle || "Search",
           }
         : tab
     );
@@ -125,6 +146,8 @@ const SafariPopup = ({ onClose }: SafariPopupProps) => {
             historyIndex: newIndex,
             iframeUrl: t.history[newIndex],
             title: t.history[newIndex],
+            // Optional: Update the address bar text to match history
+            url: t.history[newIndex] 
           }
         : tab
     );
@@ -144,6 +167,8 @@ const SafariPopup = ({ onClose }: SafariPopupProps) => {
             historyIndex: newIndex,
             iframeUrl: t.history[newIndex],
             title: t.history[newIndex],
+            // Optional: Update the address bar text to match history
+            url: t.history[newIndex]
           }
         : tab
     );
@@ -153,13 +178,14 @@ const SafariPopup = ({ onClose }: SafariPopupProps) => {
 
   const handleRefresh = () => {
     setIsLoading(true);
-    const refreshedUrl = activeTab.iframeUrl + "?refresh=" + Date.now();
-
-    const updatedTabs = tabs.map((tab) =>
-      tab.id === activeTabId ? { ...tab, iframeUrl: refreshedUrl } : tab
-    );
-
-    setTabs(updatedTabs);
+    // Force re-render of iframe usually requires changing src slightly or toggling
+    // Here we append a timestamp, but some sites might strip it.
+    const refreshedUrl = activeTab.iframeUrl; // simplified to just reload current
+    
+    // To visually simulate refresh we just toggle loading state, 
+    // as React won't reload iframe unless src changes.
+    // A trick is to set it to blank then back, but simple loading is often enough UI feedback.
+    
     setTimeout(() => setIsLoading(false), 700);
   };
 

@@ -71,8 +71,8 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({ type, isOpen, onClose, 
       ref={dropdownRef}
       className="absolute backdrop-blur-xl z-[70] text-white"
       style={{
-        left: type === 'clock' ? 'auto' : `${position.x}px`,
-        right: type === 'clock' ? '10px' : 'auto', // Anchor clock to right edge
+        right: '10px', // All menus align to right edge
+        left: 'auto',
         top: `${position.y}px`,
         background: "rgba(40, 40, 40, 0.9)",
         border: "1px solid rgba(255, 255, 255, 0.2)",
@@ -83,6 +83,7 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({ type, isOpen, onClose, 
         animation: "menuFadeIn 0.1s ease-out forwards",
       }}
     >
+
       {/* --- BATTERY MENU --- */}
       {type === "battery" && (
         <div className="space-y-2">
@@ -909,11 +910,11 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
             </div>
 
             {/* Right section - status icons and clock */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
               {/* Battery */}
               <div
                 onClick={(e) => handleStatusClick("battery", e)}
-                className={`cursor-pointer hover:opacity-80 transition-opacity duration-150 ${activeStatus === 'battery' ? 'opacity-100 bg-white/10 rounded px-1' : 'hover:opacity-80'}`}>
+                className={`cursor-pointer hover:opacity-80 transition-opacity duration-150 ${activeStatus === 'battery' ? 'opacity-100 bg-white/10 rounded px-2 py-1' : 'hover:opacity-80'}`}>
                 <svg
                   width="26"
                   height="12"
