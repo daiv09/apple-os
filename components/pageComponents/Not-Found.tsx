@@ -51,7 +51,7 @@ export default function NotFound404({
         <EmptyContent>
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button onClick={handleHomeClick} className="btn-default group">
-              <Home className="h-4 w-4 mr-1 transition-transform group-hover:scale-110" />
+              <Home className="h-4 w-4 mr-1" />
               Go Home
             </Button>
 
@@ -60,7 +60,7 @@ export default function NotFound404({
               variant="outline"
               className="group"
             >
-              <ArrowLeft className="h-4 w-4 mr-1 transition-transform group-hover:-translate-x-1" />
+              <ArrowLeft className="h-4 w-4 mr-1" />
               Go Back
             </Button>
           </div>

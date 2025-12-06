@@ -104,7 +104,17 @@ export default function Home() {
           loop
           muted
           playsInline
-          className="fixed inset-0 w-full h-full object-cover -z-10"
+          preload="auto"
+          className="fixed inset-0 w-full h-full object-cover -z-10 transition-opacity duration-1000"
+          style={{
+            WebkitBackfaceVisibility: 'hidden',
+            backfaceVisibility: 'hidden',
+            transform: 'translateZ(0)',
+            willChange: 'transform'
+          }}
+          onLoadedData={(e) => {
+            e.currentTarget.playbackRate = 1.0;
+          }}
         >
           <source src="./video_background.mp4" type="video/mp4" />
         </video>
