@@ -450,7 +450,7 @@ const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ isOpen, onClose, hand
                     {/* Results List */}
                     {/* Condition: show results when query is non-empty OR when all results are shown initially (query.length === 0) */}
                     {filteredResults.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-white/20 max-h-80 overflow-y-auto">
+                        <div className="mt-2 pt-2 border-t border-white/20 max-h-80 overflow-y-auto hide-scrollbar">
                             {filteredResults.map((item, index) => (
                                 <div
                                     key={item.name}
