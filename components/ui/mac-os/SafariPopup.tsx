@@ -103,19 +103,19 @@ const SafariPopup = ({ onClose }: SafariPopupProps) => {
   const handleSearch = () => {
     // Use the new Smart URL logic
     const destinationUrl = getSmartUrl(activeTab.url);
-    
+
     // We use the input text as the title if it's a search, otherwise the URL
     const displayTitle = activeTab.url.includes(".") ? activeTab.url : activeTab.url;
 
     const updatedTabs = tabs.map((tab) =>
       tab.id === activeTabId
         ? {
-            ...tab,
-            iframeUrl: destinationUrl,
-            history: [...tab.history, destinationUrl],
-            historyIndex: tab.history.length,
-            title: displayTitle || "Search",
-          }
+          ...tab,
+          iframeUrl: destinationUrl,
+          history: [...tab.history, destinationUrl],
+          historyIndex: tab.history.length,
+          title: displayTitle || "Search",
+        }
         : tab
     );
 
@@ -132,13 +132,13 @@ const SafariPopup = ({ onClose }: SafariPopupProps) => {
     const updatedTabs = tabs.map((tab) =>
       tab.id === activeTabId
         ? {
-            ...tab,
-            historyIndex: newIndex,
-            iframeUrl: t.history[newIndex],
-            title: t.history[newIndex],
-            // Optional: Update the address bar text to match history
-            url: t.history[newIndex] 
-          }
+          ...tab,
+          historyIndex: newIndex,
+          iframeUrl: t.history[newIndex],
+          title: t.history[newIndex],
+          // Optional: Update the address bar text to match history
+          url: t.history[newIndex]
+        }
         : tab
     );
 
@@ -153,13 +153,13 @@ const SafariPopup = ({ onClose }: SafariPopupProps) => {
     const updatedTabs = tabs.map((tab) =>
       tab.id === activeTabId
         ? {
-            ...tab,
-            historyIndex: newIndex,
-            iframeUrl: t.history[newIndex],
-            title: t.history[newIndex],
-            // Optional: Update the address bar text to match history
-            url: t.history[newIndex]
-          }
+          ...tab,
+          historyIndex: newIndex,
+          iframeUrl: t.history[newIndex],
+          title: t.history[newIndex],
+          // Optional: Update the address bar text to match history
+          url: t.history[newIndex]
+        }
         : tab
     );
 
@@ -168,14 +168,8 @@ const SafariPopup = ({ onClose }: SafariPopupProps) => {
 
   const handleRefresh = () => {
     setIsLoading(true);
-    // Force re-render of iframe usually requires changing src slightly or toggling
-    // Here we append a timestamp, but some sites might strip it.
     const refreshedUrl = activeTab.iframeUrl; // simplified to just reload current
-    
-    // To visually simulate refresh we just toggle loading state, 
-    // as React won't reload iframe unless src changes.
-    // A trick is to set it to blank then back, but simple loading is often enough UI feedback.
-    
+
     setTimeout(() => setIsLoading(false), 700);
   };
 
@@ -238,19 +232,18 @@ const SafariPopup = ({ onClose }: SafariPopupProps) => {
       exit={{ opacity: 0, scale: 0.95, y: 20 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
       className={`
-  fixed z-[9999] bg-[#E5E5E5] dark:bg-[#262626] shadow-2xl overflow-hidden
+  fixed z-9999 bg-[#E5E5E5] dark:bg-[#262626] shadow-2xl overflow-hidden
   transition-all duration-300
 
-  ${
-    zoomed
-      ? `
+  ${zoomed
+          ? `
     left-0 w-screen h-screen translate-x-0 translate-y-0 rounded-none
-    ${navbarVisible ? "top-[40px]" : "top-0"}
+    ${navbarVisible ? "top-10" : "top-0"}
   `
-      : minimized
-        ? "top-1/2 left-1/2 w-[200px] h-[40px] -translate-x-1/2 -translate-y-1/2 rounded-[12px]"
-        : "top-1/2 left-1/2 w-[90vw] max-w-[1000px] h-[85vh] max-h-[650px] -translate-x-1/2 -translate-y-1/2 rounded-[12px]"
-  }
+          : minimized
+            ? "top-1/2 left-1/2 w-[200px] h-10 -translate-x-1/2 -translate-y-1/2 rounded-[12px]"
+            : "top-1/2 left-1/2 w-[90vw] max-w-[1000px] h-[85vh] max-h-[650px] -translate-x-1/2 -translate-y-1/2 rounded-[12px]"
+        }
 `}
     >
       {/* Inject Safari Tab CSS */}
@@ -259,7 +252,7 @@ const SafariPopup = ({ onClose }: SafariPopupProps) => {
       {/* TITLE BAR (Existing) */}
       <div className="relative h-[52px] bg-[#E5E5E5] dark:bg-[#2B2B2B] border-b border-[#D1D1D1] dark:border-[#404040]">
         {/* Traffic Lights */}
-        <div className="absolute top-[20px] left-[20px] flex gap-2 z-50">
+        <div className="absolute top-5 left-5 flex gap-2 z-50">
           <button
             onClick={() => {
               if (zoomed) {
@@ -403,7 +396,7 @@ const SafariPopup = ({ onClose }: SafariPopupProps) => {
         </div>
 
         {/* Right Icons (unchanged) */}
-        <div className="absolute top-[11px] right-[20px] flex gap-2">
+        <div className="absolute top-[11px] right-5 flex gap-2">
           <button className="w-7 h-7 rounded-md hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center">
             <svg
               width="14"
