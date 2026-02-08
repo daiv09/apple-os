@@ -116,7 +116,7 @@ export default function Home() {
             e.currentTarget.playbackRate = 1.0;
           }}
         >
-          <source src="./video_background.mp4" type="video/mp4" />
+          <source src="./compressed_video_background.mp4" type="video/mp4" />
         </video>
       )}
       {/* -------------------------------------- */}

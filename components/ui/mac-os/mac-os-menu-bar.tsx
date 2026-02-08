@@ -69,7 +69,7 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({ type, isOpen, onClose, 
   return (
     <div
       ref={dropdownRef}
-      className="absolute backdrop-blur-xl z-[70] text-white"
+      className="absolute backdrop-blur-xl z-70 text-white"
       style={{
         right: '10px', // All menus align to right edge
         left: 'auto',
@@ -177,7 +177,7 @@ const useBattery = () => {
   useEffect(() => {
     const nav = navigator as NavigatorWithBattery;
     if (!nav.getBattery) {
-      setBattery({ level: 1, charging: true }); // Fallback for Safari/Firefox
+      setBattery({ level: Math.random() * 0.5 + 0.5, charging: Math.random() > 0.5 }); // Fallback with random values for testing
       return;
     }
 
@@ -340,7 +340,7 @@ const MenuDropdown: React.FC<MenuDropdownProps> = ({
   return (
     <div
       ref={dropdownRef}
-      className="absolute backdrop-blur-md z-[60]"
+      className="absolute backdrop-blur-md z-60"
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
@@ -411,7 +411,6 @@ const MenuDropdown: React.FC<MenuDropdownProps> = ({
 };
 
 const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
-  appName = "Portfolio",
   menus = DEFAULT_MENUS,
   onMenuAction,
   className = "",
