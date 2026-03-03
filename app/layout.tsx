@@ -32,7 +32,7 @@ export default async function RootLayout({
   const isMobile = /android|iphone|ipad|ipod|mobile|tablet/i.test(ua || '');
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning suppressContentEditableWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

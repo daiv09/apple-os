@@ -1,12 +1,10 @@
 "use client";
 
-import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Accordion,
   AccordionItem,
@@ -46,10 +44,8 @@ export type FeatureShowcaseProps = {
 };
 
 export function FeatureShowcase({
-  eyebrow = "Discover",
   title,
   description,
-  stats = ["1 reference", "30s setup", "Share‑ready"],
   steps = [
     {
       id: "step-1",
@@ -153,7 +149,7 @@ export function FeatureShowcase({
 
               {/* Tab controls (pill) */}
               <div className="pointer-events-auto absolute inset-x-0 bottom-4 z-10 flex w-full justify-center">
-                <TabsList className="flex gap-2 rounded-xl border border-border bg-background/80 p-1 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+                <TabsList className="flex gap-2 rounded-xl border border-border bg-background/80 p-1 backdrop-blur supports-backdrop-filter:bg-background/70">
                   {tabs.map((t) => (
                     <TabsTrigger
                       key={t.value}

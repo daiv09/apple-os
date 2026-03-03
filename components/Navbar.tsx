@@ -1,63 +1,61 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import MacOSMenuBar from "@/components/ui/mac-os/mac-os-menu-bar";
 import { useFullscreen } from "@/app/FullscreenContext";
 
 interface NavbarProps {
   onVisibilityChange?: (visible: boolean) => void;
   onMenuAction: (actionId: string) => Promise<void>;
-  // 🛑 Pass this prop through
   isStaticBackgroundActive: boolean;
 }
 
 export default function Navbar({ onVisibilityChange, onMenuAction, isStaticBackgroundActive }: NavbarProps) {
   const { isFullscreen, setNavbarVisible } = useFullscreen();
+  
+  const [isMobile, setIsMobile] = useState(() => 
+    typeof window !== "undefined" ? window.innerWidth < 640 : false
+  );
+  
   const [showBar, setShowBar] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
+
+  // 1. Determine final visibility during render to avoid cascading effects
+  // This ensures the bar is ALWAYS visible if not in fullscreen or if on mobile.
+  const isActuallyVisible = useMemo(() => {
+    if (isMobile) return true;
+    if (!isFullscreen) return true;
+    return showBar;
+  }, [isMobile, isFullscreen, showBar]);
 
   // Detect mobile screens
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 640);
-    check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Notify parent + sync context
+  // 2. Notify parent + sync context with the DERIVED visibility
   useEffect(() => {
-    setNavbarVisible(showBar);
-    onVisibilityChange?.(showBar);
-  }, [showBar]);
+    setNavbarVisible(isActuallyVisible);
+    onVisibilityChange?.(isActuallyVisible);
+  }, [isActuallyVisible, setNavbarVisible, onVisibilityChange]);
 
-  // Auto-hide (desktop only)
+  // 3. Auto-hide logic (Desktop + Fullscreen only)
   useEffect(() => {
-    if (isMobile) {
-      setShowBar(true);
-      return;
-    }
+    // Only run mouse tracking if we are in a state where hiding is possible
+    if (isMobile || !isFullscreen) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isFullscreen) {
-        setShowBar(true);
-        return;
-      }
-
-      // ⭐ macOS logic:
-      // ─ Cursor at the top 3px → reveal
+      // reveal if cursor is at the top 3px
       if (e.clientY <= 3) {
         if (!showBar) setShowBar(true);
         return;
       }
 
-      const nav = navRef.current;
-      if (!nav) return;
-
-      // Get the *intended* nav height (fixed 40px)
       const NAV_HEIGHT = 40;
       const navBottom = showBar ? NAV_HEIGHT : 0;
 
-      // If cursor is inside navbar's vertical space → keep visible
+      // Keep visible if hovering over the navbar area
       if (e.clientY <= navBottom) {
         if (!showBar) setShowBar(true);
         return;
@@ -71,19 +69,12 @@ export default function Navbar({ onVisibilityChange, onMenuAction, isStaticBackg
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, [isFullscreen, isMobile, showBar]);
 
-  // When exiting fullscreen — always show
-  useEffect(() => {
-    if (!isFullscreen) {
-      setShowBar(true);
-    }
-  }, [isFullscreen]);
-
   return (
     <div
       ref={navRef}
       style={{
         position: "fixed",
-        top: showBar ? 0 : -40,
+        top: isActuallyVisible ? 0 : -40,
         left: 0,
         width: "100%",
         height: "40px",
@@ -91,15 +82,14 @@ export default function Navbar({ onVisibilityChange, onMenuAction, isStaticBackg
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        opacity: showBar ? 1 : 0,
+        opacity: isActuallyVisible ? 1 : 0,
         transition: "top 0.25s ease, opacity 0.25s ease",
-        pointerEvents: showBar ? "auto" : "none",
+        pointerEvents: isActuallyVisible ? "auto" : "none",
       }}
     >
       <div style={{ width: "100%", padding: isMobile ? "0 4px" : "0 16px" }}>
         <MacOSMenuBar
-          onMenuAction={onMenuAction} // 🛑 Pass the handler received from the parent
-          // 🛑 Pass the prop down to MacOSMenuBar
+          onMenuAction={onMenuAction}
           isStaticBackgroundActive={isStaticBackgroundActive}
         />
       </div>

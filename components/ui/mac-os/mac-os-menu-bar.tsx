@@ -155,31 +155,45 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({ type, isOpen, onClose, 
           </div>
 
           <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-300">
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <span key={d} className="text-gray-500 font-bold">{d}</span>)}
-            {Array.from({ length: 30 }, (_, i) => i + 1).map(day => {
-              const isToday = day === new Date().getDate();
-              return (
-                <div key={day} className={`aspect-square flex items-center justify-center rounded-full ${isToday ? 'bg-red-500 text-white font-bold' : 'hover:bg-white/10'}`}>
-                  {day}
-                </div>
-              )
-            })}
-          </div>
+  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((dayLabel, index) => (
+    <span key={`day-label-${index}`} className="text-gray-500 font-bold">
+      {dayLabel}
+    </span>
+  ))}
+  
+  {Array.from({ length: 30 }, (_, i) => i + 1).map(day => {
+    const isToday = day === new Date().getDate();
+    return (
+      <div 
+        key={`calendar-day-${day}`} 
+        className={`aspect-square flex items-center justify-center rounded-full ${
+          isToday ? 'bg-red-500 text-white font-bold' : 'hover:bg-white/10'
+        }`}
+      >
+        {day}
+      </div>
+    );
+  })}
+</div>
         </div>
       )}
     </div>
   );
 };
-// --- Hook: useBattery ---
+
 const useBattery = () => {
-  const [battery, setBattery] = useState<{ level: number; charging: boolean } | null>(null);
+  // 1. Initialize with fallback values immediately
+  const [battery, setBattery] = useState<{ level: number; charging: boolean }>(() => ({
+    level: Math.random() * 0.5 + 0.5,
+    charging: Math.random() > 0.5
+  }));
 
   useEffect(() => {
     const nav = navigator as NavigatorWithBattery;
-    if (!nav.getBattery) {
-      setBattery({ level: Math.random() * 0.5 + 0.5, charging: Math.random() > 0.5 }); // Fallback with random values for testing
-      return;
-    }
+    
+    // 2. If the API doesn't exist, we don't need to do anything 
+    // because the state is already initialized with fallbacks.
+    if (!nav.getBattery) return;
 
     let batt: BatteryManager;
     const updateBattery = () => {
@@ -285,7 +299,7 @@ const APPLE_MENU_ITEMS: MenuItemOption[] = [
   { label: "Contact Me", action: "contact-me", shortcut: "⌘K" },
   { label: "Report an Issue…", action: "report-issue" },
   { label: "Separator", type: "separator" },
-  { label: "Restart Navigation", action: "reset-navigation" },
+  { label: "Lock Screen", action: "lock-screen" },
 ];
 
 // MenuDropdown Component (bundled inside)
@@ -421,6 +435,8 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
   const pathname = usePathname(); // Add usePathname to track route changes
   const [scale, setScale] = useState(1);
 
+  const { setIsLocked } = useApp();
+
   // --- FUNCTIONALITY: Dynamic Menu Configuration (Moved here) ---
   const dynamicMenus = useMemo(() => {
     const currentMenus = JSON.parse(JSON.stringify(menus)) as MenuConfig[];
@@ -454,24 +470,29 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
   }, [menus, isStaticBackgroundActive]);
   // -----------------------------------------------------------------
 
-  // --- FUNCTIONALITY: Update App Name based on Route ---
+  // --- FUNCTIONALITY: Update App Name based on Context OR Route ---
   useEffect(() => {
-    if (!pathname) return;
+    // 1. Check if an app is explicitly active in your context (set by Dock clicks)
+    if (currentApp && currentApp !== "Portfolio" && currentApp !== "Finder") {
+      // If an app is open, we keep its name. No need to check route.
+      return;
+    }
 
+    // 2. Fallback: Determine name based on URL if no specialized app is open
     let name = "Portfolio";
-    if (pathname.includes("projects")) name = "VS Code";
-    else if (pathname.includes("contact")) name = "Mail";
-    else if (pathname.includes("about")) name = "Finder";
-    else if (pathname.includes("designs")) name = "Figma";
-    else if (pathname.includes("experience")) name = "Calendar";
-    else if (pathname.includes("resume")) name = "Preview";
+    
+    // Specific route mapping
+    if (pathname.includes("/projects")) name = "VS Code";
+    else if (pathname.includes("/about")) name = "Finder";
+    else if (pathname.includes("/experience")) name = "Calendar";
+    else if (pathname.includes("/resume")) name = "Preview";
+    // Default for home ("/") or any other page is "Portfolio"
 
-    // Only update if it's different to avoid loops
+    // 3. Only update if the value actually changed to prevent render loops
     if (currentApp !== name) {
       setCurrentApp(name);
     }
-  }, [pathname, setCurrentApp, currentApp]);
-
+  }, [pathname, currentApp, setCurrentApp]);
 
   useEffect(() => {
     const updateScale = () => {
@@ -538,16 +559,20 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
   const handleMenuAction = useCallback(
     async (action: string) => {
       // ----------- EXTERNAL LINKS -----------
+      if (action === "lock-screen") {
+      setIsLocked(true);    // Updates local context state
+      setActiveMenu(null);
+      onMenuAction?.(action); 
+      return;
+      }
       if (action === "open-github") {
         window.open("https://github.com/daiv09", "_blank");
         return;
       }
-
       if (action === "open-linkedin") {
         window.open("https://linkedin.com/in/daiwiik-harihar/", "_blank");
         return;
       }
-
       // ----------- PORTFOLIO NAVIGATION -----------
       if (action === "go-home") router.push("/");
       if (action === "go-about") router.push("/about");
@@ -684,7 +709,7 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
       // Trigger custom callback if parent wants it
       onMenuAction?.(action);
     },
-    [router, onMenuAction]
+    [router, onMenuAction, setIsLocked]
   );
 
   // --- FUNCTIONALITY: Keyboard Shortcuts (Windows & Mac Support) ---
@@ -697,7 +722,6 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
       // Windows uses 'ctrlKey' (Control ^)
       const isActionKey = e.metaKey || e.ctrlKey;
       const isAlt = e.altKey; // Maps to Option (Mac) or Alt (Windows)
-      const isShift = e.shiftKey;
 
       // We only care if the primary action key (Cmd or Ctrl) is pressed
       if (!isActionKey) return;

@@ -1,10 +1,8 @@
-// src/components/SpotlightSearch.tsx (Modified for Autocomplete & App Open)
 "use client";
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 // --- App Popup Imports ---
-// Assuming these components are correctly defined in their respective paths
 import TerminalPopup from "../TerminalPopup";
 import NotesPopup from "./NotesPopup";
 import SafariPopup from "./SafariPopup";
@@ -14,10 +12,8 @@ import MusicPopup from "./MusicPopup";
 import MailPopup from "./MailPopup";
 import CalendarPopup from "./CalenderPopup";
 import FinderPopup from "./FinderPopup";
-
-// --- Context Imports (assuming paths are correct) ---
 import { useApp } from '@/contexts/AppContext';
-import { useFullscreen } from "@/app/FullscreenContext";
+import { AnimatePresence } from 'framer-motion';
 
 // --- Sample App Data ---
 const DOCK_APPS = [
@@ -67,8 +63,6 @@ const ALL_SEARCHABLE_ITEMS: SearchItem[] = [...APP_SEARCH_ITEMS, ...SEARCH_ITEMS
 interface SpotlightSearchProps {
     isOpen: boolean;
     onClose: () => void;
-    // Note: The logic for simple menu actions (like dark-mode, reload) remains here.
-    // The main app opening logic has been moved into this component to manage its state.
     handleAppOrMenuAction: (actionId: string) => void;
 }
 
@@ -85,20 +79,42 @@ const appStateMap = {
     finder: { setter: 'setShowFinder' },
 } as const;
 
-
 const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ isOpen, onClose, handleAppOrMenuAction }) => {
     const router = useRouter();
     const inputRef = useRef<HTMLInputElement>(null);
     const { setCurrentApp } = useApp();
-    const { isFullscreen, dockVisible, setDockVisible } = useFullscreen();
 
     // --- Search State ---
     const [query, setQuery] = useState('');
-    const [filteredResults, setFilteredResults] = useState<SearchItem[]>(ALL_SEARCHABLE_ITEMS);
     const [activeIndex, setActiveIndex] = useState(0);
-    const [autofillText, setAutofillText] = useState('');
 
+    // --- Derived Search Logic ---
+    const lowerQuery = query.toLowerCase();
 
+    const filteredResults = useMemo(() => {
+        // If search is closed or query is empty, show default items
+        if (!isOpen || lowerQuery.length === 0) return ALL_SEARCHABLE_ITEMS;
+
+        return ALL_SEARCHABLE_ITEMS.filter(item =>
+            item.name.toLowerCase().includes(lowerQuery) ||
+            item.description.toLowerCase().includes(lowerQuery)
+        ).sort((a, b) => {
+            const aStarts = a.name.toLowerCase().startsWith(lowerQuery);
+            const bStarts = b.name.toLowerCase().startsWith(lowerQuery);
+            if (aStarts && !bStarts) return -1;
+            if (!aStarts && bStarts) return 1;
+            if (a.appId && !b.appId) return -1;
+            if (!a.appId && b.appId) return 1;
+            return a.name.localeCompare(b.name);
+        });
+    }, [isOpen, lowerQuery]);
+
+    const autofillText = useMemo(() => {
+    if (lowerQuery.length > 0 && filteredResults.length > 0 && filteredResults[0].name.toLowerCase().startsWith(lowerQuery)) {
+        return filteredResults[0].name.substring(query.length);
+    }
+    return '';
+}, [filteredResults, query.length, lowerQuery]);
 
     // --- App State Management ---
     const [openApps, setOpenApps] = useState<string[]>([]);
@@ -113,71 +129,35 @@ const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ isOpen, onClose, hand
     const [showCalendar, setShowCalendar] = useState(false);
     const [showFinder, setShowFinder] = useState(true); // Finder open by default
 
-    // Helper map of app states for use in handleAppClick/executeAction
-    const appStateSetters = {
+    // 1. Memoize the Setters (these functions are usually stable, but this satisfies the linter)
+    const appStateSetters = useMemo(() => ({
         setShowTerminal, setIsTerminalMinimized,
         setShowNotes, setShowSafari, setShowCalculator,
         setShowPhotos, setShowMusic, setShowMail,
         setShowCalendar, setShowFinder,
-    };
-    const appStateValues = {
+    }), []); // Empty array if these are from useState, as setters are stable
+
+    // 2. Memoize the Values
+    const appStateValues = useMemo(() => ({
         showTerminal, isTerminalMinimized,
         showNotes, showSafari, showCalculator,
         showPhotos, showMusic, showMail,
         showCalendar, showFinder,
-    };
+    }), [
+        showTerminal, isTerminalMinimized,
+        showNotes, showSafari, showCalculator,
+        showPhotos, showMusic, showMail,
+        showCalendar, showFinder
+    ]);   
 
-    // Ensure input is focused when open
     useEffect(() => {
         if (isOpen) {
             inputRef.current?.focus();
-            setQuery(''); // Reset query on open
-            setFilteredResults(ALL_SEARCHABLE_ITEMS); // Show all results initially
+            setQuery('');
+            setActiveIndex(0);
         }
     }, [isOpen]);
 
-
-    // --- Core Search & Filter Logic ---
-    useEffect(() => {
-        if (!isOpen) return;
-
-        const lowerQuery = query.toLowerCase();
-
-        if (lowerQuery.length === 0) {
-            setFilteredResults(ALL_SEARCHABLE_ITEMS);
-            setAutofillText('');
-        } else {
-            const results = ALL_SEARCHABLE_ITEMS.filter(item =>
-                item.name.toLowerCase().includes(lowerQuery) ||
-                item.description.toLowerCase().includes(lowerQuery)
-            ).sort((a, b) => {
-                // Prioritize results that start with the query
-                const aStarts = a.name.toLowerCase().startsWith(lowerQuery);
-                const bStarts = b.name.toLowerCase().startsWith(lowerQuery);
-                if (aStarts && !bStarts) return -1;
-                if (!aStarts && bStarts) return 1;
-                // Secondary sort: App results first
-                if (a.appId && !b.appId) return -1;
-                if (!a.appId && b.appId) return 1;
-                return a.name.localeCompare(b.name);
-            });
-
-            setFilteredResults(results);
-
-            // --- AUTOFILL LOGIC ---
-            if (results.length > 0 && results[0].name.toLowerCase().startsWith(lowerQuery)) {
-                const suggestedText = results[0].name;
-                setAutofillText(suggestedText.substring(query.length));
-            } else {
-                setAutofillText('');
-            }
-        }
-
-        setActiveIndex(0); // Reset selection on new filter
-    }, [query, isOpen]);
-
-    // --- CORE APP CLICK HANDLER (Centralized App Window Management) ---
-    // This logic must live here because this component manages all the `showApp` state variables.
     const handleAppClick = useCallback((appId: string | null | undefined) => {
         if (!appId || typeof appId !== 'string') {
             console.error("handleAppClick received invalid appId:", appId);
@@ -306,8 +286,6 @@ const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ isOpen, onClose, hand
         return () => window.removeEventListener('keydown', globalHandleKeyPress);
     }, [isOpen, handleKeyDown]);
 
-
-    // If the spotlight is not open, render null to hide it completely (performance)
     if (!isOpen) return (
         <>
             {/* Must render popups even when spotlight is closed */}
@@ -355,7 +333,6 @@ const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ isOpen, onClose, hand
         </>
     );
 
-    // --- Main Spotlight Search Render ---
     return (
         <>
             {/* App Popups (Rendered when spotlight is open or closed, based on app state) */}
@@ -364,6 +341,7 @@ const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ isOpen, onClose, hand
                to avoid re-rendering issues, though the current structure is functional. */}
 
             {/* Terminal Popup (only shown if running AND not minimized) */}
+            <AnimatePresence>
             {openApps.includes("terminal") && showTerminal && !isTerminalMinimized && (
                 <TerminalPopup
                     onClose={() => handleAppClick("quit:terminal")}
@@ -402,11 +380,11 @@ const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ isOpen, onClose, hand
             {openApps.includes("finder") && showFinder && (
                 <FinderPopup onClose={() => handleAppClick("quit:finder")} />
             )}
-
+            </AnimatePresence>
 
             {/* --- SPOTLIGHT UI --- */}
             <div
-                className="fixed inset-0 z-[100] flex items-start justify-center pt-24"
+                className="fixed inset-0 z-100 flex items-start justify-center pt-24"
                 onClick={(e) => {
                     // Close if clicked outside the search bar
                     const target = e.target as HTMLElement;
@@ -479,7 +457,7 @@ const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ isOpen, onClose, hand
                     {/* No Results */}
                     {query.length > 0 && filteredResults.length === 0 && (
                         <div className="p-4 text-center text-white/50 text-sm">
-                            No results found for **"{query}"**.
+                            No results found for &quot;{query}&quot;.
                         </div>
                     )}
                 </div>

@@ -48,17 +48,13 @@ export const AnimatedSpan = ({
 
   const sequence = useSequence()
   const itemIndex = useItemIndex()
-  const [hasStarted, setHasStarted] = useState(false)
-  useEffect(() => {
-    if (!sequence || itemIndex === null) return
-    if (!sequence.sequenceStarted) return
-    if (hasStarted) return
-    if (sequence.activeIndex === itemIndex) {
-      setHasStarted(true)
-    }
-  }, [sequence?.activeIndex, sequence?.sequenceStarted, hasStarted, itemIndex])
 
-  const shouldAnimate = sequence ? hasStarted : startOnView ? isInView : true
+  const shouldAnimate = useMemo(() => {
+    if (sequence && itemIndex !== null) {
+      return sequence.sequenceStarted && sequence.activeIndex >= itemIndex;
+    }
+    return startOnView ? isInView : true;
+  }, [sequence, itemIndex, isInView, startOnView]);
 
   return (
     <motion.div
@@ -121,54 +117,63 @@ export const TypingAnimation = ({
   const itemIndex = useItemIndex()
 
   useEffect(() => {
+    // 1. Logic for when part of a Terminal sequence
     if (sequence && itemIndex !== null) {
-      if (!sequence.sequenceStarted) return
-      if (started) return
+      if (!sequence.sequenceStarted) return;
+      if (started) return;
+      
       if (sequence.activeIndex === itemIndex) {
-        setStarted(true)
+        setStarted(true);
       }
-      return
+      return;
     }
 
+    // 2. Logic for standalone typing (Start on View or Immediate)
     if (!startOnView) {
-      const startTimeout = setTimeout(() => setStarted(true), delay)
-      return () => clearTimeout(startTimeout)
+      const startTimeout = setTimeout(() => setStarted(true), delay);
+      return () => clearTimeout(startTimeout);
     }
 
-    if (!isInView) return
+    if (!isInView) return;
 
-    const startTimeout = setTimeout(() => setStarted(true), delay)
-    return () => clearTimeout(startTimeout)
+    const startTimeout = setTimeout(() => setStarted(true), delay);
+    return () => clearTimeout(startTimeout);
+    
+    // Added 'sequence' to satisfy the linter and ensure the context is tracked correctly
   }, [
     delay,
     startOnView,
     isInView,
     started,
+    sequence, 
     sequence?.activeIndex,
     sequence?.sequenceStarted,
     itemIndex,
-  ])
+  ]);
 
   useEffect(() => {
-    if (!started) return
+    if (!started) return;
 
-    let i = 0
+    let i = 0;
     const typingEffect = setInterval(() => {
       if (i < children.length) {
-        setDisplayedText(children.substring(0, i + 1))
-        i++
+        setDisplayedText(children.substring(0, i + 1));
+        i++;
       } else {
-        clearInterval(typingEffect)
+        clearInterval(typingEffect);
+        
+        // Signal completion only when typing is fully finished
         if (sequence && itemIndex !== null) {
-          sequence.completeItem(itemIndex)
+          sequence.completeItem(itemIndex);
         }
       }
-    }, duration)
+    }, duration);
 
     return () => {
-      clearInterval(typingEffect)
-    }
-  }, [children, duration, started])
+      clearInterval(typingEffect);
+    };
+    // Added 'sequence' and 'itemIndex' to satisfy the linter and ensure logic stability
+  }, [children, duration, started, sequence, itemIndex]);
 
   return (
     <MotionComponent
@@ -218,14 +223,18 @@ export const Terminal = ({
   }, [sequence, activeIndex, sequenceHasStarted])
 
   const wrappedChildren = useMemo(() => {
-    if (!sequence) return children
-    const array = Children.toArray(children)
-    return array.map((child, index) => (
-      <ItemIndexContext.Provider key={index} value={index}>
-        {child as React.ReactNode}
-      </ItemIndexContext.Provider>
-    ))
-  }, [children, sequence])
+    if (!sequence) return children;
+    
+    // Use React.Children.map for better stability with mixed child types
+    return Children.map(children, (child, index) => {
+      if (!child) return null;
+      return (
+        <ItemIndexContext.Provider key={`terminal-line-${index}`} value={index}>
+          {child}
+        </ItemIndexContext.Provider>
+      );
+    });
+  }, [children, sequence]);
 
   const content = (
     <div

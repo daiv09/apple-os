@@ -1,31 +1,25 @@
-// src/app/page.tsx (Corrected)
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Navbar from "@/components/Navbar";
-import NewDock from "@/components/New-Dock"; // Assuming NewDock exports a single component
-import SpotlightSearch from "@/components/ui/mac-os/SpotlightSearch";
+import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from 'next/navigation';
+import { useApp } from '@/contexts/AppContext';
+
+// Component Imports
+import Navbar from "@/components/Navbar";
+import NewDock from "@/components/New-Dock";
+import SpotlightSearch from "@/components/ui/mac-os/SpotlightSearch";
+import LockScreen from "@/components/ui/mac-os/LockScreen";
 
 export default function Home() {
   const router = useRouter();
+  const { isLocked, setIsLocked } = useApp();
   const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
-
-  // 🛑 FIX 1: Removed duplicate 'useStaticBackground' state.
-  // Renamed for clarity to match action handler logic:
   const [isStaticBackgroundActive, setIsStaticBackgroundActive] = useState(false);
-
-  // State/Ref to hold the NewDock's app handling function
   const [newDockAppClickHandler, setNewDockAppClickHandler] = useState<((appId: string) => void) | null>(null);
 
-  // --- UNIVERSAL ACTION HANDLER (Menu Bar, Dock, Spotlight) ---
-  // src/app/page.tsx
-
-  // ... (imports and state declarations)
-
-  // --- UNIVERSAL ACTION HANDLER (Menu Bar, Dock, Spotlight) ---
+  // --- UNIVERSAL ACTION HANDLER ---
   const handleUniversalAction = useCallback(async (actionId: string) => {
-    // 1. **NEW: BACKGROUND ACTIONS**
     if (actionId === "set-bg-static") {
       setIsStaticBackgroundActive(true);
       return;
@@ -34,48 +28,37 @@ export default function Home() {
       setIsStaticBackgroundActive(false);
       return;
     }
-
-    // 2. DOCK APP ACTION (Launch or Focus an App)
-    const dockAppIds = ['finder', 'calculator', 'terminal', 'mail', 'notes', 'safari', 'photos', 'music', 'calendar'];
-    const isDockApp = dockAppIds.includes(actionId);
-
-    // 🔑 THE CRITICAL FIX: Ensure the handler is set AND the actionId is a valid dock app.
-    if (isDockApp) {
-      // 🛑 Check 1: Is the handler ready?
-      if (!newDockAppClickHandler) {
-        console.warn(`Attempted to launch dock app ${actionId}, but NewDock handler is not ready.`);
-        return;
-      }
-
-      // 🛑 Check 2: Is the actionId valid (not null/undefined/empty string)
-      if (typeof actionId === 'string' && actionId.trim().length > 0) {
-        newDockAppClickHandler(actionId); // Call the handler with the valid ID
-      } else {
-        console.error("handleUniversalAction received invalid app ID:", actionId);
-      }
+    if (actionId === "lock-screen") {
+      setIsLocked(true); 
       return;
     }
-    // -----------------------------------------------------------
+    if (actionId === "system-restart") {
+      window.location.reload();
+      return;
+    }
 
-    // 3. MENU BAR ACTION (System/Navigation)
-  }, [router, newDockAppClickHandler]); // Dependencies are correct
-  // -----------------------------------------------------------
+    const dockAppIds = ['finder', 'calculator', 'terminal', 'mail', 'notes', 'safari', 'photos', 'music', 'calendar'];
+    if (dockAppIds.includes(actionId) && newDockAppClickHandler) {
+      newDockAppClickHandler(actionId);
+      return;
+    }
 
-  // --- Keyboard Shortcut Logic: Ctrl + Alt + Space ---
+    if (actionId.startsWith("go-")) {
+      const path = actionId.replace("go-", "");
+      router.push(`/${path === 'home' ? '' : path}`);
+    }
+  }, [newDockAppClickHandler, setIsLocked, router]);
+
+  // --- Shortcut & Event Listeners ---
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      const isCmd = e.metaKey || e.ctrlKey;
-      const isAlt = e.altKey;
-      const isSpace = e.code === 'Space';
-
-      if (isCmd && isAlt && isSpace) {
+      const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+      if (isCmdOrCtrl && e.altKey && e.code === 'Space') {
         e.preventDefault();
         setIsSpotlightOpen(prev => !prev);
       }
     };
-
     window.addEventListener('keydown', handleKeyPress);
-
     const handleToggle = () => setIsSpotlightOpen(prev => !prev);
     window.addEventListener('toggle-spotlight', handleToggle);
 
@@ -88,61 +71,72 @@ export default function Home() {
   const closeSpotlight = useCallback(() => setIsSpotlightOpen(false), []);
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden">
-      {/* 🛑 CONDITIONAL BACKGROUND RENDERING 🛑 */}
-      {isStaticBackgroundActive ? ( // 🛑 Use the corrected state name
-        <div
-          className="fixed inset-0 bg-cover bg-center -z-10"
-          style={{
-            backgroundImage: "url('./background.jpg')",
-          }}
-          aria-hidden="true"
-        ></div>
-      ) : (
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          className="fixed inset-0 w-full h-full object-cover -z-10 transition-opacity duration-1000"
-          style={{
-            WebkitBackfaceVisibility: 'hidden',
-            backfaceVisibility: 'hidden',
-            transform: 'translateZ(0)',
-            willChange: 'transform'
-          }}
-          onLoadedData={(e) => {
-            e.currentTarget.playbackRate = 1.0;
-          }}
-        >
-          <source src="./compressed_video_background.mp4" type="video/mp4" />
-        </video>
-      )}
-      {/* -------------------------------------- */}
-      <SpotlightSearch
-        isOpen={isSpotlightOpen}
-        onClose={closeSpotlight}
-        handleAppOrMenuAction={handleUniversalAction} // Pass the unified handler
-      />
-
-      {/* Navbar - Needs to dispatch toggle-spotlight event for its own menu shortcut */}
-      <div className="relative z-50">
-        <Navbar
-          // 💡 Pass the unified handler to Navbar to catch all Menu Bar actions
-          onMenuAction={handleUniversalAction}
-          // 🛑 FIX 2: Pass the background state to Navbar for dynamic menu labels
-          isStaticBackgroundActive={isStaticBackgroundActive}
-        />
+    <div className="relative min-h-screen w-full overflow-hidden bg-black text-white">
+      
+      {/* 🛑 FIXED BACKGROUND LAYER 🛑 */}
+      {/* Position fixed ensures it covers the entire viewport regardless of scrolling/nesting */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        {isStaticBackgroundActive ? (
+          <div
+            className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
+            style={{ backgroundImage: "url('/background.jpg')" }}
+          />
+        ) : (
+          <video
+            autoPlay loop muted playsInline preload="auto"
+            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
+            style={{ WebkitBackfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
+          >
+            <source src="/compressed_video_background.mp4" type="video/mp4" />
+          </video>
+        )}
+        {/* Subtle overlay to prevent background from overpowering UI text */}
+        <div className="absolute inset-0 bg-black/10 z-10" />
       </div>
 
-      {/* Main content */}
-      <main className="relative z-10 flex flex-col items-center w-full pt-1 md:pt-4 lg:pt-8 snap-y snap-mandatory overflow-y-auto scroll-smooth flex-1 pb-20">
-        <NewDock
-          exposeAppClickHandler={setNewDockAppClickHandler}
-          isStaticBackgroundActive={isStaticBackgroundActive} // This is fine if NewDock needs it
-        />
-      </main>
+      {/* 🖥️ UI OVERLAYS (Locked or Unlocked) */}
+      <div className="relative z-20 h-screen w-full">
+        <AnimatePresence mode="wait">
+          {isLocked ? (
+            <LockScreen 
+              key="lock-screen" 
+              onUnlock={() => setIsLocked(false)} 
+              isStaticBackgroundActive={isStaticBackgroundActive} 
+            />
+          ) : (
+            <motion.div
+              key="desktop"
+              initial={{ opacity: 0, scale: 1.05 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, y: -40 }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="relative h-full w-full flex flex-col"
+            >
+              <SpotlightSearch
+                isOpen={isSpotlightOpen}
+                onClose={closeSpotlight}
+                handleAppOrMenuAction={handleUniversalAction}
+              />
+
+              <Navbar
+                onMenuAction={handleUniversalAction}
+                isStaticBackgroundActive={isStaticBackgroundActive}
+              />
+  
+              <main className="flex-1 overflow-hidden relative">
+                 {/* Desktop content/icons go here */}
+              </main>
+
+              <div className="pb-4 flex justify-center">
+                <NewDock
+                  exposeAppClickHandler={setNewDockAppClickHandler}
+                  isStaticBackgroundActive={isStaticBackgroundActive}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

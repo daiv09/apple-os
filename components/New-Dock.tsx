@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation"; // ⬅️ add this
 import MacOSDock from "./mac-os-dock";
 import TerminalPopup from "./ui/TerminalPopup";
@@ -68,10 +68,10 @@ type AppClickHandler = (appId: string) => void;
 // Define the component props
 interface NewDockProps {
   exposeAppClickHandler: React.Dispatch<React.SetStateAction<AppClickHandler | null>>;
-  isStaticBackgroundActive: boolean; // Optional prop for static background state
+  isStaticBackgroundActive: boolean; // Add this prop to receive background state
 }
 
-const NewDock: React.FC<NewDockProps> = ({ exposeAppClickHandler, isStaticBackgroundActive }) => { // Added exposeAppClickHandler prop
+const NewDock: React.FC<NewDockProps> = ({ exposeAppClickHandler, isStaticBackgroundActive }: NewDockProps) => { // Added exposeAppClickHandler prop
   const [openApps, setOpenApps] = useState<string[]>([]);
   const [showTerminal, setShowTerminal] = useState(false);
   const [isTerminalMinimized, setIsTerminalMinimized] = useState(false);
@@ -130,317 +130,86 @@ const NewDock: React.FC<NewDockProps> = ({ exposeAppClickHandler, isStaticBackgr
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, [isFullscreen, setDockVisible]);
 
-  // --- CORE APP CLICK HANDLER (Made into useCallback for stability) ---
-  const handleAppClick = useCallback((appId: string) => {
-    // 🔑 FIX: Robustly check if appId is a valid string
-    if (typeof appId !== 'string' || !appId.trim()) {
-      console.error("handleAppClick received invalid appId:", appId);
-      return; // Stop execution if the ID is invalid
-    }
+  // 1. Move the State Mapper inside useMemo at the top of your component
+const appStates = useMemo(() => ({
+  finder: { show: showFinder, setter: setShowFinder },
+  calculator: { show: showCalculator, setter: setShowCalculator },
+  terminal: { show: showTerminal, setter: setShowTerminal, minimized: isTerminalMinimized, setMinimized: setIsTerminalMinimized },
+  notes: { show: showNotes, setter: setShowNotes },
+  safari: { show: showSafari, setter: setShowSafari },
+  photos: { show: showPhotos, setter: setShowPhotos },
+  music: { show: showMusic, setter: setShowMusic },
+  mail: { show: showMail, setter: setShowMail },
+  calendar: { show: showCalendar, setter: setShowCalendar },
+}), [showFinder, showCalculator, showTerminal, isTerminalMinimized, showNotes, showSafari, showPhotos, showMusic, showMail, showCalendar]);
 
-    // 🔹 Global window actions from menu bar / elsewhere
-    if (appId === "minimize-all" || appId === "close-all") {
-      // Go "home" in an SPA context
-      router.push("/");
+// 2. Optimized handleAppClick
+const handleAppClick = useCallback((appId: string) => {
+  if (typeof appId !== 'string' || !appId.trim()) return;
 
-      // Close/minimize all app windows in state
-      setShowTerminal(false);
-      setIsTerminalMinimized(false);
-      setShowNotes(false);
-      setShowSafari(false);
-      setShowCalculator(false);
-      setShowPhotos(false);
-      setShowMusic(false);
-      setShowMail(false);
-      setShowCalendar(false);
-      setShowFinder(false);
+  // Global Actions
+  if (appId === "minimize-all" || appId === "close-all") {
+    router.push("/");
+    Object.values(appStates).forEach(app => {
+      app.setter(false);
+      if ('setMinimized' in app) app.setMinimized(false);
+    });
+    setOpenApps([]);
+    setCurrentApp("Finder");
+    return;
+  }
 
-      setOpenApps([]);          // clear dock dots
-      setCurrentApp("Finder");  // reset current app label
-      return;
-    }
+  // Handle Quit
+  if (appId.startsWith("quit:")) {
+    const realId = appId.replace("quit:", "");
+    setOpenApps((prev) => prev.filter((id) => id !== realId));
+    const config = appStates[realId as keyof typeof appStates];
+    if (config) config.setter(false);
+    setCurrentApp("Finder");
+    return;
+  }
 
-    // Handle quit action
-    if (appId.startsWith("quit:")) {
-      const realId = appId.replace("quit:", "");
+  // Handle Apps
+  const isRunning = openApps.includes(appId);
+  const config = appStates[appId as keyof typeof appStates];
 
-      // Remove from open apps
-      setOpenApps((prev) => prev.filter((id) => id !== realId));
+  if (!config) return;
 
-      // Close specific popups and reset to Finder if needed
-      if (realId === "terminal") {
-        setShowTerminal(false);
-        setCurrentApp("Finder");
-      }
-      if (realId === "notes") {
-        setShowNotes(false);
-        setCurrentApp("Finder");
-      }
-      if (realId === "safari") {
-        setShowSafari(false);
-        setCurrentApp("Finder");
-      }
-      if (realId === "calculator") {
-        setShowCalculator(false);
-        setCurrentApp("Finder");
-      }
-      if (realId === "photos") {
-        setShowPhotos(false);
-        setCurrentApp("Finder");
-      }
-      if (realId === "music") {
-        setShowMusic(false);
-        setCurrentApp("Finder");
-      }
-      if (realId === "mail") {
-        setShowMail(false);
-        setCurrentApp("Finder");
-      }
-      if (realId === "calendar") {
-        setShowCalendar(false);
-        setCurrentApp("Finder");
-      }
-      if (realId === "finder") {
-        setShowFinder(false);
-        setCurrentApp("Finder");
-      }
-
-      return; // Finished handling quit
-    }
-
-    // TERMINAL
-    if (appId === "terminal") {
-      const isRunning = openApps.includes("terminal");
-
-      // If Terminal is running and visible → minimize
-      if (isRunning && showTerminal && !isTerminalMinimized) {
-        setIsTerminalMinimized(true);
-        setCurrentApp("Finder");
-        return;
-      }
-
-      // If Terminal is running but minimized → restore
-      if (isRunning && isTerminalMinimized) {
-        setIsTerminalMinimized(false);
-        setShowTerminal(true);
-        setCurrentApp("Terminal");
-        return;
-      }
-
-      // If Terminal is NOT running → launch it
-      if (!isRunning) {
-        setOpenApps((prev) => [...prev, "terminal"]); // show dot
-      }
-
-      // Show terminal window
-      setShowTerminal(true);
-      setIsTerminalMinimized(false);
-      setCurrentApp("Terminal");
-      return;
-    }
-
-    // MAIL
-    if (appId === "mail") {
-      const isRunning = openApps.includes("mail");
-
-      if (isRunning && showMail) {
-        setShowMail(false);
-        setCurrentApp("Finder");
-        return;
-      }
-
-      if (isRunning && !showMail) {
-        setShowMail(true);
-        setCurrentApp("Mail");
-        return;
-      }
-
-      setOpenApps((prev) => [...prev, "mail"]);
-      setShowMail(true);
-      setCurrentApp("Mail");
-      return;
-    }
-
-    // NOTES
-    if (appId === "notes") {
-      const isRunning = openApps.includes("notes");
-
-      // If running and visible → close
-      if (isRunning && showNotes) {
-        setShowNotes(false);
-        setCurrentApp("Finder");
-        return;
-      }
-
-      // If running but hidden → show
-      if (isRunning && !showNotes) {
-        setShowNotes(true);
-        setCurrentApp("Notes");
-        return;
-      }
-
-      // If not running → add to dock + open
-      if (!isRunning) {
-        setOpenApps((prev) => [...prev, "notes"]);
-      }
-
-      setShowNotes(true);
-      setCurrentApp("Notes");
-      return;
-    }
-
-    // SAFARI
-    if (appId === "safari") {
-      const isRunning = openApps.includes("safari");
-
-      if (isRunning && showSafari) {
-        setShowSafari(false);
-        setCurrentApp("Finder");
-        return;
-      }
-
-      if (isRunning && !showSafari) {
-        setShowSafari(true);
-        setCurrentApp("Safari");
-        return;
-      }
-
-      setOpenApps((prev) => [...prev, "safari"]);
-      setShowSafari(true);
-      setCurrentApp("Safari");
-      return;
-    }
-
-    // CALCULATOR
-    if (appId === "calculator") {
-      const isRunning = openApps.includes("calculator");
-
-      if (isRunning && showCalculator) {
-        setShowCalculator(false);
-        setCurrentApp("Finder");
-        return;
-      }
-
-      if (isRunning && !showCalculator) {
-        setShowCalculator(true);
-        setCurrentApp("Calculator");
-        return;
-      }
-
-      setOpenApps((prev) => [...prev, "calculator"]);
-      setShowCalculator(true);
-      setCurrentApp("Calculator");
-      return;
-    }
-
-    // PHOTOS
-    if (appId === "photos") {
-      const isRunning = openApps.includes("photos");
-
-      if (isRunning && showPhotos) {
-        setShowPhotos(false);
-        setCurrentApp("Finder");
-        return;
-      }
-
-      if (isRunning && !showPhotos) {
-        setShowPhotos(true);
-        setCurrentApp("Photos");
-        return;
-      }
-
-      setOpenApps((prev) => [...prev, "photos"]);
-      setShowPhotos(true);
-      setCurrentApp("Photos");
-      return;
-    }
-
-    // MUSIC
-    if (appId === "music") {
-      const isRunning = openApps.includes("music");
-
-      if (isRunning && showMusic) {
-        setShowMusic(false);
-        setCurrentApp("Finder");
-        return;
-      }
-
-      if (isRunning && !showMusic) {
-        setShowMusic(true);
-        setCurrentApp("Music");
-        return;
-      }
-
-      setOpenApps((prev) => [...prev, "music"]);
-      setShowMusic(true);
-      setCurrentApp("Music");
-      return;
-    }
-
-    // CALENDAR
-    if (appId === "calendar") {
-      const isRunning = openApps.includes("calendar");
-
-      if (isRunning && showCalendar) {
-        setShowCalendar(false);
-        setCurrentApp("Finder");
-        return;
-      }
-
-      if (isRunning && !showCalendar) {
-        setShowCalendar(true);
-        setCurrentApp("Calendar");
-        return;
-      }
-
-      setOpenApps((prev) => [...prev, "calendar"]);
-      setShowCalendar(true);
-      setCurrentApp("Calendar");
-      return;
-    }
-
-    // FINDER
-    if (appId === "finder") {
-      const isRunning = openApps.includes("finder");
-
-      if (isRunning && showFinder) {
-        setShowFinder(false);
-        setCurrentApp("Finder");
-        return;
-      }
-
-      if (isRunning && !showFinder) {
-        setShowFinder(true);
-        setCurrentApp("Finder");
-        return;
-      }
-
-      setOpenApps((prev) => [...prev, "finder"]);
-      setShowFinder(true);
+  if (appId === "terminal" && isRunning) {
+  if (config && 'minimized' in config && 'setMinimized' in config) {
+    if (config.show && !config.minimized) {
+      config.setMinimized(true);
       setCurrentApp("Finder");
-      return;
+    } else {
+      config.setMinimized(false);
+      config.setter(true);
+      setCurrentApp("Terminal");
     }
+  }
+  return;
+}
 
-    // All OTHER apps still toggle normally:
-    setOpenApps((prev) =>
-      prev.includes(appId)
-        ? prev.filter((id) => id !== appId)
-        : [...prev, appId]
-    );
-  }, [openApps, showTerminal, isTerminalMinimized, showNotes, showSafari, showCalculator, showPhotos, showMusic, showMail, showCalendar, showFinder, setCurrentApp]);
+  if (isRunning) {
+    config.setter(!config.show);
+    setCurrentApp(config.show ? "Finder" : appId.charAt(0).toUpperCase() + appId.slice(1));
+  } else {
+    setOpenApps((prev) => [...prev, appId]);
+    config.setter(true);
+    setCurrentApp(appId.charAt(0).toUpperCase() + appId.slice(1));
+  }
+}, [openApps, router, setCurrentApp, appStates]); 
 
-  // --- 🔑 EXPOSE HANDLER TO PARENT COMPONENT ---
+useEffect(() => {
+  exposeAppClickHandler(() => handleAppClick); 
+}, [exposeAppClickHandler, handleAppClick]);
+
   useEffect(() => {
-    // This effect runs once after the initial render to register the handler.
-    // It runs again if handleAppClick dependency changes (which shouldn't happen 
-    // often due to useCallback and its deps)
     exposeAppClickHandler(handleAppClick);
   }, [exposeAppClickHandler, handleAppClick]);
 
   const filteredApps = sampleApps.filter(app => app && app.id && typeof app.id === 'string');
   return (
     <>
-      {/* Terminal Popup (only shown if running AND not minimized) */}
       {openApps.includes("terminal") && showTerminal && !isTerminalMinimized && (
         <TerminalPopup
           onClose={() => {
@@ -544,7 +313,7 @@ const NewDock: React.FC<NewDockProps> = ({ exposeAppClickHandler, isStaticBackgr
 
       {/* Fullscreen mouse detector */}
       <div
-        className="fixed left-0 bottom-0 w-full h-8 z-[9998]"
+        className="fixed left-0 bottom-0 w-full h-8 z-9998"
         style={{ pointerEvents: "auto" }}
         onMouseMove={(e) => {
           if (!isFullscreen) {
@@ -562,7 +331,7 @@ const NewDock: React.FC<NewDockProps> = ({ exposeAppClickHandler, isStaticBackgr
       <div
         ref={dockRef}
         className={`
-    fixed left-0 w-full flex items-center justify-center z-[9999] // 🛑 Keep z-index here
+    fixed left-0 w-full flex items-center justify-center z-9999 // 🛑 Keep z-index here
     transition-all duration-300
     ${dockVisible ? "bottom-0 opacity-100" : "-bottom-20 opacity-0 pointer-events-none"}
   `}

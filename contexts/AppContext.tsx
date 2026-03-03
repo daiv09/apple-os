@@ -5,15 +5,23 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 interface AppContextType {
   currentApp: string;
   setCurrentApp: (appName: string) => void;
+  isLocked: boolean;
+  setIsLocked: (locked: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentApp, setCurrentApp] = useState("Daiwiik Harihar's Portfolio");
+  const [currentApp, setCurrentApp] = useState("Portfolio");
+  const [isLocked, setIsLocked] = useState(true); // Default to locked state
 
   return (
-    <AppContext.Provider value={{ currentApp, setCurrentApp }}>
+    <AppContext.Provider value={{ 
+      currentApp, 
+      setCurrentApp, 
+      isLocked, 
+      setIsLocked 
+    }}>
       {children}
     </AppContext.Provider>
   );

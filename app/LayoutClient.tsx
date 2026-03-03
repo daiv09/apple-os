@@ -1,9 +1,9 @@
-// app/LayoutClient.tsx
+
 "use client";
-import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Laptop, AlertTriangle, ChevronRight, MessageSquare } from 'lucide-react';
+import { AlertTriangle, MessageSquare } from 'lucide-react';
+import Image from 'next/image';
 
 interface LayoutClientProps {
   children: React.ReactNode;
@@ -11,21 +11,7 @@ interface LayoutClientProps {
   isMobile: boolean; 
 }
 
-/**
- * 💻 MobileWarning Component (Apple Style)
- * A clean, monochromatic overlay compelling the user to switch devices.
- */
 const MobileWarning = () => {
-  const [copied, setCopied] = useState(false);
-  const currentUrl = typeof window !== 'undefined' ? window.location.href : '...';
-
-  /* const handleCopyLink = () => {
-  //   navigator.clipboard.writeText(currentUrl);
-  //   setCopied(true);
-  //   setTimeout(() => setCopied(false), 2000);
-  };
-  */
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -76,51 +62,40 @@ const MobileWarning = () => {
   );
 };
 
-/**
- * 🖥️ LayoutClient Component
- * Handles the logic for device detection and display switching.
- */
-export function LayoutClient({ children, isMobile }: LayoutClientProps) {
-  const [isClient, setIsClient] = useState(false);
-  const [showMobileWarning, setShowMobileWarning] = useState(isMobile);
-  const MIN_WIDTH = 1024; // Standard breakpoint for desktop
+function useWindowWidth() {
+  const [width, setWidth] = useState<number | null>(null);
 
   useEffect(() => {
-    // 1. Mark component as mounted (client-side)
-    setIsClient(true);
-    
-    // 2. Client-side width check (most accurate source)
-    const checkWidth = () => {
-      // Use the actual window width for the most reliable decision
-      setShowMobileWarning(window.innerWidth < MIN_WIDTH);
-    };
-    
-    // Initial check and setup resize listener
-    checkWidth();
-    window.addEventListener('resize', checkWidth);
-    return () => window.removeEventListener('resize', checkWidth);
+    const handleResize = () => setWidth(window.innerWidth);
+    handleResize(); // Set initial width on mount
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 3. Hydration Prevention & Initial Server Render
-  // On the first render (before useEffect runs), use the server-detected 'isMobile' state.
-  // This prevents a hydration mismatch error by rendering the same component tree server- and client-side initially.
-  if (!isClient) {
-    return showMobileWarning ? <MobileWarning /> : children;
+  return width;
+}
+
+export function LayoutClient({ children, isMobile }: LayoutClientProps) {
+  const width = useWindowWidth();
+  const MIN_WIDTH = 1024;
+
+  if (width === null) {
+    return isMobile ? <MobileWarning /> : <div className="opacity-0">{children}</div>;
   }
 
-  // 4. Client-side render with animation
+  const showMobileWarning = width < MIN_WIDTH;
+
   return (
     <AnimatePresence mode="wait">
       {showMobileWarning ? (
         <MobileWarning key="mobile-warning" />
       ) : (
-        // Apply a clean fade-in transition when switching to desktop view
         <motion.div
           key="desktop-content"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
-          className="h-full min-h-screen" // Ensure desktop content fills the screen
+          className="h-full min-h-screen"
         >
           {children}
         </motion.div>

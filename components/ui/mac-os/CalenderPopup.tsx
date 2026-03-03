@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { useFullscreen } from "@/app/FullscreenContext";
 
@@ -88,8 +88,6 @@ export default function CalendarPopup({ onClose }: { onClose: () => void }) {
 
   // Day / Week / Month generation helpers
   const monthGrid = useMemo(() => buildMonthGrid(cursorDate), [cursorDate]);
-  const weekRange = useMemo(() => buildWeekRange(cursorDate), [cursorDate]);
-  const dayIso = dateToISO(cursorDate);
 
   // event helpers
   const eventsOnDay = (isoDate: string) =>
@@ -104,10 +102,10 @@ export default function CalendarPopup({ onClose }: { onClose: () => void }) {
     setEvents((s) => [ev, ...s]);
   };
 
-  // Add modal actions
-  useEffect(() => {
-    if (!showAddModal) setNewTitle("");
-  }, [showAddModal]);
+  const closeModal = () => {
+  setShowAddModal(false);
+  setNewTitle(""); // Reset text immediately when the user clicks 'Cancel' or 'Close'
+};
 
   // top offset when zoomed to account for navbar
   const topOffsetClass = zoomed
@@ -119,7 +117,7 @@ export default function CalendarPopup({ onClose }: { onClose: () => void }) {
   if (minimized) {
     return (
       <motion.div
-        className={`fixed left-1/2 z-[9999] ${topOffsetClass} -translate-x-1/2 w-[300px] h-[44px] bg-white rounded-xl shadow-lg flex items-center justify-between px-4`}
+        className={`fixed left-1/2 z-9999 ${topOffsetClass} -translate-x-1/2 w-[300px] h-11 bg-white rounded-xl shadow-lg flex items-center justify-between px-4`}
       >
         <div className="flex items-center gap-3">
           <div
@@ -159,9 +157,9 @@ export default function CalendarPopup({ onClose }: { onClose: () => void }) {
       exit={{ opacity: 0, scale: 0.97, y: 8 }}
       transition={{ duration: 0.18 }}
       className={`
-        fixed z-[9999] ${topOffsetClass} left-1/2 -translate-x-1/2
+        fixed z-9999 ${topOffsetClass} left-1/2 -translate-x-1/2
         bg-white border border-neutral-300 shadow-2xl overflow-hidden rounded-2xl
-        ${zoomed ? "w-screen h-screen rounded-none left-0 -translate-x-0" : "w-[1100px] h-[740px]"}
+        ${zoomed ? "w-screen h-screen rounded-none left-0 translate-x-0" : "w-[1100px] h-[740px]"}
         transition-all duration-200
       `}
     >
@@ -265,16 +263,16 @@ export default function CalendarPopup({ onClose }: { onClose: () => void }) {
                 onChange={(e) => setNewTitle(e.target.value)}
               />
               <button
-                className="px-3 bg-blue-600 text-white rounded"
-                onClick={() => {
-                  if (newTitle.trim()) {
-                    addEvent(dateToISO(cursorDate), newTitle);
-                    setNewTitle("");
-                  }
-                }}
-              >
-                Add
-              </button>
+  className="px-4 py-2 bg-blue-600 text-white rounded"
+  onClick={() => {
+    if (newTitle.trim()) {
+      addEvent(selectedDate!, newTitle.trim());
+      closeModal(); // <--- Optional: Closes and resets in one go
+    }
+  }}
+>
+  Add
+</button>
             </div>
             <div className="text-xs text-neutral-400 mt-2">
               Click a day also to view details or add event.
@@ -295,7 +293,7 @@ export default function CalendarPopup({ onClose }: { onClose: () => void }) {
               </div>
 
               <div className="grid grid-cols-7 gap-1">
-                {monthGrid.map((row, rIdx) =>
+                {monthGrid.map((row) =>
                   row.map((cell) => {
                     const iso = dateToISO(cell.date);
                     const isThisMonth = cell.inMonth;
@@ -386,10 +384,10 @@ export default function CalendarPopup({ onClose }: { onClose: () => void }) {
 
       {/* Add / view modal */}
       {showAddModal && selectedDate && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center">
+        <div className="fixed inset-0 z-10000 flex items-center justify-center">
           <div
             className="absolute inset-0 bg-black/30"
-            onClick={() => setShowAddModal(false)}
+            onClick={closeModal}
           />
           <div className="bg-white w-[420px] p-4 rounded-xl z-50 shadow-xl">
             <div className="flex items-center justify-between mb-3">

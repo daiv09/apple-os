@@ -168,7 +168,7 @@ const SafariPopup = ({ onClose }: SafariPopupProps) => {
 
   const handleRefresh = () => {
     setIsLoading(true);
-    const refreshedUrl = activeTab.iframeUrl; // simplified to just reload current
+    // const refreshedUrl = activeTab.iframeUrl; // simplified to just reload current
 
     setTimeout(() => setIsLoading(false), 700);
   };

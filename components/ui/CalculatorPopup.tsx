@@ -59,25 +59,31 @@ const CalculatorPopup = ({ onClose }: CalculatorPopupProps) => {
     }
 
     // = Calculate
-    if (value === "=") {
-      setInput((prev) => {
-        try {
-          if (!prev || prev === "Error") return "0";
-          
-          const safeInput = prev
-            .replace(/÷/g, "/")
-            .replace(/×/g, "*")
-            .replace(/--/g, "+");
+if (value === "=") {
+  setInput((prev) => {
+    try {
+      if (!prev || prev === "Error") return "0";
+      
+      // FIX: Use Unicode escapes (\u00d7 for × and \u00f7 for ÷) 
+      // to prevent confusion with standard 'x' or '/' in source code.
+      const safeInput = prev
+        .replace(/\u00f7/g, "/") // ÷
+        .replace(/\u00d7/g, "*") // ×
+        .replace(/--/g, "+");
 
-          // eslint-disable-next-line no-new-func
-          const result = Function(`return ${safeInput}`)();
-          return String(result);
-        } catch {
-          return "Error";
-        }
-      });
-      return;
+      // Removed redundant eslint-disable-next-line
+      const result = new Function(`return ${safeInput}`)();
+      
+      // Handle cases like Infinity or NaN (division by zero)
+      if (!isFinite(result)) return "Error";
+      
+      return String(result);
+    } catch {
+      return "Error";
     }
+  });
+  return;
+}
 
     // Standard Input
     setInput((prev) => {
@@ -125,7 +131,7 @@ const CalculatorPopup = ({ onClose }: CalculatorPopupProps) => {
       transition={{ duration: 0.25 }}
       className={`
         fixed top-20 right-10
-        z-[9999] 
+        z-9999 
         bg-[#1C1C1E]
         rounded-3xl shadow-2xl
         border border-[#333]
@@ -133,7 +139,7 @@ const CalculatorPopup = ({ onClose }: CalculatorPopupProps) => {
         transition-all
         ${
           minimized
-            ? "w-[160px] h-[50px] overflow-hidden"
+            ? "w-40 h-[50px] overflow-hidden"
             : "w-[300px]" // Removed zoomed width logic
         }
       `}

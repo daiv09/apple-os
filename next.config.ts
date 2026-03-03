@@ -18,6 +18,10 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "cdn.jim-nielsen.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images.alphacoders.com",
       }
     ],
   },

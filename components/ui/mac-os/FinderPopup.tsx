@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { motion, useDragControls } from "framer-motion";
 import {
-  Folder,
   Search,
   ChevronLeft,
   ChevronRight,
@@ -26,11 +25,13 @@ export default function FinderPopup({ onClose }: { onClose: () => void }) {
   const [zoomed, setZoomed] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [currentPath, setCurrentPath] = useState<string>("Projects");
-  const [navigationHistory, setNavigationHistory] = useState<string[]>(["Projects"]);
+  const [navigationHistory, setNavigationHistory] = useState<string[]>([
+    "Projects",
+  ]);
   const [historyIndex, setHistoryIndex] = useState<number>(0);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const popupRef = useRef<HTMLDivElement | null>(null);
   const dragControls = useDragControls();
@@ -41,8 +42,8 @@ export default function FinderPopup({ onClose }: { onClose: () => void }) {
   const currentItems = folderStructure[currentPath] || [];
 
   // Filter items based on search
-  const filteredItems = currentItems.filter(item =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredItems = currentItems.filter((item) =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleZoom = () => {
@@ -56,7 +57,7 @@ export default function FinderPopup({ onClose }: { onClose: () => void }) {
   };
 
   const handleDoubleClick = (item: FileItemType) => {
-    if (item.type === 'folder') {
+    if (item.type === "folder") {
       const newPath = item.name;
       if (folderStructure[newPath]) {
         // Add to navigation history
@@ -117,15 +118,16 @@ export default function FinderPopup({ onClose }: { onClose: () => void }) {
       }}
       transition={{ duration: 0.25, ease: "easeOut" }}
       className={`
-        fixed z-[9999] bg-transparent shadow-2xl border border-[#D0D0D0] 
+        fixed z-9999 bg-transparent shadow-2xl border border-[#D0D0D0] 
         rounded-xl overflow-hidden select-none transition-all duration-300
 
-        ${zoomed
-          ? `
+        ${
+          zoomed
+            ? `
               left-0 w-full h-full rounded-none
-              ${navbarVisible ? "top-[40px]" : "top-0"}
+              ${navbarVisible ? "top-10" : "top-0"}
             `
-          : "top-[10%] left-[20%] w-[900px] h-[600px]"
+            : "top-[10%] left-[20%] w-[900px] h-[600px]"
         }
 
         ${minimized ? "opacity-0 translate-y-[300px]" : ""}
@@ -137,7 +139,6 @@ export default function FinderPopup({ onClose }: { onClose: () => void }) {
         onPointerDown={(e) => dragControls.start(e)}
       > */}
 
-
       {/* <div className="flex-1 text-center text-xs text-gray-500 pr-8 select-none">
           Finder
         </div> */}
@@ -146,10 +147,9 @@ export default function FinderPopup({ onClose }: { onClose: () => void }) {
       {/* Window Content */}
       <div className="w-full h-full bg-white flex overflow-hidden">
         {sidebarOpen && (
-          <div className="w-64 bg-white border-r border-gray-300 p-4 pl-5 flex flex-col overflow-y-auto">
-
+          <div className="w-64 bg-[#F3F3F3]/80 backdrop-blur-xl border-r border-gray-300 p-4 pl-5 flex flex-col overflow-y-auto">
             {/* Traffic lights */}
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-6">
               <button
                 onClick={() => {
                   if (zoomed) {
@@ -159,29 +159,29 @@ export default function FinderPopup({ onClose }: { onClose: () => void }) {
                   }
                   onClose();
                 }}
-                className="w-3 h-3 bg-[#FF5F56] rounded-full hover:brightness-90 transition"
+                className="w-3 h-3 bg-[#FF5F56] rounded-full hover:brightness-90 transition shadow-inner"
               />
               <button
                 onClick={handleMinimize}
-                className="w-3 h-3 bg-[#FFBD2E] rounded-full hover:brightness-90 transition"
+                className="w-3 h-3 bg-[#FFBD2E] rounded-full hover:brightness-90 transition shadow-inner"
               />
               <button
                 onClick={handleZoom}
-                className="w-3 h-3 bg-[#27C93F] rounded-full hover:brightness-90 transition"
+                className="w-3 h-3 bg-[#27C93F] rounded-full hover:brightness-90 transition shadow-inner"
               />
             </div>
 
             {/* FAVOURITES */}
-            <div className="text-[11px] font-semibold text-gray-500 tracking-wide mb-1.5">
-              FAVOURITES
+            <div className="text-[11px] font-bold text-gray-500/80 tracking-wide mb-1.5 uppercase">
+              Favorites
             </div>
-            <div className="space-y-0.5 mb-3">
+            <div className="space-y-0.5 mb-5">
               {["Desktop", "Documents", "Photos"].map((item) => (
                 <div
                   key={item}
                   onClick={() => handleSidebarClick(item)}
-                  className={`px-2 py-1 rounded-md hover:bg-gray-200 cursor-pointer text-sm transition
-            ${currentPath === item ? "bg-blue-100 text-blue-600" : ""}
+                  className={`px-2 py-1 rounded-md hover:bg-gray-300/50 cursor-pointer text-sm font-medium transition
+            ${currentPath === item ? "text-blue-500 bg-gray-300/50" : "text-black"} 
           `}
                 >
                   {item}
@@ -190,39 +190,41 @@ export default function FinderPopup({ onClose }: { onClose: () => void }) {
             </div>
 
             {/* PROJECTS */}
-            <div className="text-[11px] font-semibold text-gray-500 tracking-wide mb-1.5">
-              PROJECTS
+            <div className="text-[11px] font-bold text-gray-500/80 tracking-wide mb-1.5 uppercase">
+              Projects
             </div>
-            <div className="space-y-0.5 mb-3">
+            <div className="space-y-0.5 mb-5">
               <div
                 onClick={() => handleSidebarClick("Projects")}
-                className={`px-2 py-1 rounded-md hover:bg-gray-200 cursor-pointer text-sm flex items-center gap-2
-          ${currentPath === "Projects" ? "bg-blue-100 text-blue-600" : ""}
+                className={`px-2 py-1 rounded-md hover:bg-gray-300/50 cursor-pointer text-sm font-medium flex items-center gap-2 transition
+          ${currentPath === "Projects" ? "text-blue-500 bg-gray-300/50" : "text-black"}
         `}
               >
-                <Image src="/folder.png" alt="folder icon" width={18} height={18} />
+                <Image src="/folder.png" alt="folder" width={16} height={16} />
                 Projects
               </div>
             </div>
 
             {/* LOCATIONS */}
-            <div className="text-[11px] font-semibold text-gray-500 tracking-wide mb-1.5">
-              LOCATIONS
+            <div className="text-[11px] font-bold text-gray-500/80 tracking-wide mb-1.5 uppercase">
+              Locations
             </div>
-            <div className="space-y-0.5 mb-3">
-              {["iCloud Drive", "sdc-user1", "AirDrop", "Network", "Bin"].map((item) => (
-                <div
-                  key={item}
-                  className="px-2 py-1 rounded-md hover:bg-gray-200 cursor-pointer text-sm"
-                >
-                  {item}
-                </div>
-              ))}
+            <div className="space-y-0.5 mb-5">
+              {["iCloud Drive", "sdc-user1", "AirDrop", "Network", "Bin"].map(
+                (item) => (
+                  <div
+                    key={item}
+                    className="px-2 py-1 rounded-md hover:bg-gray-300/50 cursor-pointer text-sm font-medium text-black transition"
+                  >
+                    {item}
+                  </div>
+                ),
+              )}
             </div>
 
             {/* TAGS */}
-            <div className="text-[11px] font-semibold text-gray-500 tracking-wide mb-1.5">
-              TAGS
+            <div className="text-[11px] font-bold text-gray-500/80 tracking-wide mb-1.5 uppercase">
+              Tags
             </div>
             <div className="space-y-0.5">
               {[
@@ -233,16 +235,17 @@ export default function FinderPopup({ onClose }: { onClose: () => void }) {
               ].map((tag) => (
                 <div
                   key={tag.name}
-                  className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-gray-200 cursor-pointer text-sm"
+                  className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-gray-300/50 cursor-pointer text-sm font-medium text-black transition"
                 >
-                  <div className={`w-3 h-3 rounded-full ${tag.color}`} />
+                  <div
+                    className={`w-2.5 h-2.5 rounded-full ${tag.color} shadow-sm`}
+                  />
                   {tag.name}
                 </div>
               ))}
             </div>
           </div>
         )}
-
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col">
@@ -279,15 +282,21 @@ export default function FinderPopup({ onClose }: { onClose: () => void }) {
 
               <Grid
                 size={18}
-                onClick={() => setViewMode('grid')}
-                className={`cursor-pointer transition ${viewMode === 'grid' ? 'text-blue-600' : 'text-gray-700 hover:text-black'
-                  }`}
+                onClick={() => setViewMode("grid")}
+                className={`cursor-pointer transition ${
+                  viewMode === "grid"
+                    ? "text-blue-600"
+                    : "text-gray-700 hover:text-black"
+                }`}
               />
               <LayoutGrid
                 size={18}
-                onClick={() => setViewMode('list')}
-                className={`cursor-pointer transition ${viewMode === 'list' ? 'text-blue-600' : 'text-gray-700 hover:text-black'
-                  }`}
+                onClick={() => setViewMode("list")}
+                className={`cursor-pointer transition ${
+                  viewMode === "list"
+                    ? "text-blue-600"
+                    : "text-gray-700 hover:text-black"
+                }`}
               />
               <Upload
                 size={18}
@@ -304,10 +313,14 @@ export default function FinderPopup({ onClose }: { onClose: () => void }) {
           <div className="flex-1 p-6 overflow-auto bg-white">
             {filteredItems.length === 0 ? (
               <div className="flex items-center justify-center h-full text-gray-400">
-                {searchQuery ? 'No items match your search' : 'This folder is empty'}
+                {searchQuery
+                  ? "No items match your search"
+                  : "This folder is empty"}
               </div>
             ) : (
-              <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-6' : 'grid-cols-1'}`}>
+              <div
+                className={`grid gap-6 ${viewMode === "grid" ? "grid-cols-6" : "grid-cols-1"}`}
+              >
                 {filteredItems.map((item) => (
                   <FileItem
                     key={item.id}
@@ -325,7 +338,8 @@ export default function FinderPopup({ onClose }: { onClose: () => void }) {
           <div className="h-8 bg-black border-t border-gray-300 flex items-center justify-between px-4 text-xs text-gray-500">
             <span>{filteredItems.length} items</span>
             <span>
-              {filteredItems.filter(i => i.type === 'folder').length} folders, {filteredItems.filter(i => i.type === 'file').length} files
+              {filteredItems.filter((i) => i.type === "folder").length} folders,{" "}
+              {filteredItems.filter((i) => i.type === "file").length} files
             </span>
           </div>
         </div>

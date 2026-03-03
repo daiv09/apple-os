@@ -135,7 +135,6 @@ const SphereImageGrid: React.FC<SphereImageGridProps> = ({
   momentumDecay = 0.95,
   maxRotationSpeed = 5,
   baseImageScale = 0.12,
-  hoverScale = 1.2,
   perspective = 1000,
   autoRotate = false,
   autoRotateSpeed = 0.3,
@@ -562,18 +561,20 @@ const SphereImageGrid: React.FC<SphereImageGridProps> = ({
           }}
         >
           <div className="relative aspect-square">
-            <img
-              src={selectedImage.src}
-              alt={selectedImage.alt}
-              className="w-full h-full object-cover"
-            />
-            <button
-              onClick={() => setSelectedImage(null)}
-              className="absolute top-2 right-2 w-8 h-8 bg-black bg-opacity-50 rounded-full text-white flex items-center justify-center hover:bg-opacity-70 transition-all cursor-pointer"
-            >
-              <X size={16} />
-            </button>
-          </div>
+  <Image
+    src={selectedImage.src}
+    alt={selectedImage.alt}
+    fill // Replaces w-full h-full to fill the aspect-square container
+    className="object-cover" // Maintains your cropping logic
+    priority // Recommended for selected/focused images to improve LCP
+  />
+  <button
+    onClick={() => setSelectedImage(null)}
+    className="absolute top-2 right-2 w-8 h-8 bg-black bg-opacity-50 rounded-full text-white flex items-center justify-center hover:bg-opacity-70 transition-all cursor-pointer z-10"
+  >
+    <X size={16} />
+  </button>
+</div>
 
           {(selectedImage.title || selectedImage.description) && (
             <div className="p-6">
