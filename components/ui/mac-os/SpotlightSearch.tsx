@@ -251,7 +251,7 @@ const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ isOpen, onClose, hand
                     // 1. If there's autofill text, complete the query
                     if (autofillText.length > 0) {
                         setQuery(query + autofillText);
-                        setAutofillText('');
+                        // setAutofillText('');
                     } else {
                         // 2. Execute the action for the currently selected item
                         executeAction(filteredResults[activeIndex]);
@@ -263,7 +263,7 @@ const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ isOpen, onClose, hand
                 if (e.key === 'Tab') e.preventDefault();
                 if (autofillText.length > 0) {
                     setQuery(query + autofillText);
-                    setAutofillText('');
+                    // setAutofillText('');
                 }
                 break;
             case 'Escape':
