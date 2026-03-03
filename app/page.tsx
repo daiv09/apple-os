@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/contexts/AppContext';
+import SystemSettings from "@/components/ui/mac-os/Settings";
 
 // Component Imports
 import Navbar from "@/components/Navbar";
@@ -16,10 +17,16 @@ export default function Home() {
   const { isLocked, setIsLocked } = useApp();
   const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
   const [isStaticBackgroundActive, setIsStaticBackgroundActive] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false); // 🛑 State for Settings visibility
   const [newDockAppClickHandler, setNewDockAppClickHandler] = useState<((appId: string) => void) | null>(null);
 
   // --- UNIVERSAL ACTION HANDLER ---
   const handleUniversalAction = useCallback(async (actionId: string) => {
+
+    if (actionId === "open-settings") {
+      setIsSettingsOpen(true);
+      return;
+    }
     if (actionId === "set-bg-static") {
       setIsStaticBackgroundActive(true);
       return;
@@ -124,7 +131,20 @@ export default function Home() {
               />
   
               <main className="flex-1 overflow-hidden relative">
-                 {/* Desktop content/icons go here */}
+                 {/* 🛑 RENDER SYSTEM SETTINGS HERE 🛑 */}
+                 <AnimatePresence>
+                   {isSettingsOpen && (
+                     <div className="absolute inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none">
+                       <div className="pointer-events-auto">
+                         <SystemSettings 
+                           onClose={() => setIsSettingsOpen(false)}
+                           isStaticBackgroundActive={isStaticBackgroundActive}
+                           setIsStaticBackgroundActive={setIsStaticBackgroundActive}
+                         />
+                       </div>
+                     </div>
+                   )}
+                 </AnimatePresence>
               </main>
 
               <div className="pb-4 flex justify-center">

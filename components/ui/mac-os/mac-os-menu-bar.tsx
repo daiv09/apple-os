@@ -46,9 +46,10 @@ interface StatusDropdownProps {
   isOpen: boolean;
   onClose: () => void;
   position: { x: number; y: number };
+  onAction?: (action: string) => void;
 }
 
-const StatusDropdown: React.FC<StatusDropdownProps> = ({ type, isOpen, onClose, position }) => {
+const StatusDropdown: React.FC<StatusDropdownProps> = ({ type, isOpen, onClose, position, onAction }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const battery = useBattery();
   const [wifiOn, setWifiOn] = useState(true);
@@ -109,42 +110,48 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({ type, isOpen, onClose, 
         </div>
       )}
 
-      {/* --- WIFI MENU --- */}
-      {type === "wifi" && (
-        <div className="select-none">
-          <div className="px-3 py-2 flex justify-between items-center">
-            <span className="font-semibold text-sm">Wi-Fi</span>
-            <div
-              onClick={() => setWifiOn(!wifiOn)}
-              className={`w-9 h-5 rounded-full p-0.5 cursor-pointer transition-colors duration-300 ${wifiOn ? 'bg-blue-500' : 'bg-gray-500'}`}
-            >
-              <div className={`w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-300 ${wifiOn ? 'translate-x-4' : 'translate-x-0'}`} />
+        {/* --- WIFI MENU --- */}
+        {type === "wifi" && (
+          <div className="select-none">
+            <div className="px-3 py-2 flex justify-between items-center">
+              <span className="font-semibold text-sm">Wi-Fi</span>
+              <div
+                onClick={() => setWifiOn(!wifiOn)}
+                className={`w-9 h-5 rounded-full p-0.5 cursor-pointer transition-colors duration-300 ${wifiOn ? 'bg-blue-500' : 'bg-gray-500'}`}
+              >
+                <div className={`w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-300 ${wifiOn ? 'translate-x-4' : 'translate-x-0'}`} />
+              </div>
             </div>
-          </div>
 
-          <div className="h-px bg-white/10 my-2" />
+            <div className="h-px bg-white/10 my-2" />
 
-          <div className={`px-3 py-1 text-sm flex items-center justify-between group rounded hover:bg-blue-600/80 cursor-pointer ${!wifiOn && 'opacity-50 pointer-events-none'}`}>
-            <div className="flex items-center gap-2">
-              <span className="text-blue-400">✓</span>
-              <span className="font-medium">Home_Network_5G</span>
-            </div>
-            <span className="text-xs text-gray-400 group-hover:text-white">🔒</span>
-          </div>
-
-          <div className={`mt-1 space-y-1 ${!wifiOn && 'opacity-50 pointer-events-none'}`}>
-            <div className="px-3 py-1 text-sm flex items-center justify-between hover:bg-blue-600/80 rounded cursor-pointer group">
-              <span className="pl-6">Starbucks WiFi</span>
+            <div className={`px-3 py-1 text-sm flex items-center justify-between group rounded hover:bg-blue-600/80 cursor-pointer ${!wifiOn && 'opacity-50 pointer-events-none'}`}>
+              <div className="flex items-center gap-2">
+                <span className="text-blue-400">✓</span>
+                <span className="font-medium">Home_Network_5G</span>
+              </div>
               <span className="text-xs text-gray-400 group-hover:text-white">🔒</span>
             </div>
-          </div>
 
-          <div className="h-px bg-white/10 my-2" />
-          <div className="px-3 py-1 text-sm hover:bg-blue-600/80 rounded cursor-pointer transition-colors">
-            Network Preferences...
-          </div>
+            <div className={`mt-1 space-y-1 ${!wifiOn && 'opacity-50 pointer-events-none'}`}>
+              <div className="px-3 py-1 text-sm flex items-center justify-between hover:bg-blue-600/80 rounded cursor-pointer group">
+                <span className="pl-6">Starbucks WiFi</span>
+                <span className="text-xs text-gray-400 group-hover:text-white">🔒</span>
+              </div>
+            </div>
+
+            <div className="h-px bg-white/10 my-2" />
+        <div 
+          onClick={() => {
+            onAction?.("open-settings"); // 🛑 Trigger the settings action
+            onClose(); // Close the dropdown
+          }}
+          className="px-3 py-1 text-sm hover:bg-blue-600/80 rounded cursor-pointer transition-colors"
+        >
+          Network Preferences...
         </div>
-      )}
+      </div>
+        )}
 
       {/* --- CLOCK MENU --- */}
       {type === "clock" && (
@@ -234,8 +241,7 @@ const DEFAULT_MENUS: MenuConfig[] = [
         action: "share-portfolio",
         hasSubmenu: true,
       },
-      { label: "Separator", type: "separator" },
-      { label: "Print This Page…", action: "print-page", shortcut: "⌘P" },
+      { label: "Separator", type: "separator" }
     ],
   },
   {
@@ -613,11 +619,6 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
           navigator.clipboard.writeText(window.location.href);
           alert("Link copied to clipboard!");
         }
-      }
-
-      // ----------- PRINT PAGE -----------
-      if (action === "print-page") {
-        window.print();
       }
 
       // ----------- CLIPBOARD ACTIONS -----------
@@ -1038,6 +1039,7 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
         isOpen={!!activeStatus}
         onClose={() => setActiveStatus(null)}
         position={dropdownPosition}
+        onAction={handleMenuAction}
       />
     </div>
   );

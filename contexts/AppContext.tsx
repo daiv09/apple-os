@@ -13,7 +13,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentApp, setCurrentApp] = useState("Portfolio");
-  const [isLocked, setIsLocked] = useState(true); // Default to locked state
+  const [isLocked, setIsLocked] = useState(false); // Default to locked state
 
   return (
     <AppContext.Provider value={{ 
