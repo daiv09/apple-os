@@ -30,10 +30,10 @@ const SafariPopup = ({ onClose }: SafariPopupProps) => {
     {
       id: crypto.randomUUID(),
       title: "Portfolio",
-      url: "daiwiik-harihar-portfolio.vercel.app",
+      url: "daiwiik-harihar.vercel.app",
       // Added &igu=1 to allow Google to display inside an iframe
-      iframeUrl: "https://daiwiik-harihar-portfolio.vercel.app",
-      history: ["https://daiwiik-harihar-portfolio.vercel.app"],
+      iframeUrl: "https://daiwiik-harihar.vercel.app",
+      history: ["https://daiwiik-harihar.vercel.app"],
       historyIndex: 0,
     },
   ]);

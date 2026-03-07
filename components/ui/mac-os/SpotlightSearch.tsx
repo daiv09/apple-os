@@ -34,7 +34,7 @@ const SEARCH_ITEMS = [
     { name: "Projects", path: "/projects", description: "All my work and case studies" },
     { name: "Skills & Tech Stack", path: "/skills", description: "Technologies and proficiencies" },
     { name: "Work Experience", path: "/experience", description: "Professional history" },
-    { name: "Resume (PDF)", path: "/resume", description: "Download or view my resume" },
+    { name: "Resume (PDF)", path: "https://daiv09.github.io/resume", description: "Download or view my resume" },
     { name: "Contact Me", path: "/contact", description: "Send an email or connect" },
     { name: "Visit GitHub", action: "open-github", description: "External link to my repository" },
     { name: "Switch to Dark Mode", action: "dark-mode", description: "Change theme to dark" },
