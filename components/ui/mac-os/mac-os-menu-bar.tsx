@@ -599,11 +599,11 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
 
       // ----------- RESUME / DOWNLOADS -----------
       if (action === "download-resume") {
-        window.open("/resume.pdf", "_blank");
+        window.open("https://daiv09.github.io/resume/", "_blank");
       }
 
       if (action === "open-resume") {
-        router.push("/resume");
+        router.push("https://daiv09.github.io/resume/");
       }
 
       // ----------- SHARE PORTFOLIO -----------
