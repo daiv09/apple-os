@@ -82,24 +82,33 @@ export default function Home() {
       
       {/* 🛑 FIXED BACKGROUND LAYER 🛑 */}
       {/* Position fixed ensures it covers the entire viewport regardless of scrolling/nesting */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        {isStaticBackgroundActive ? (
-          <div
-            className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
-            style={{ backgroundImage: "url('/background.jpg')" }}
-          />
-        ) : (
-          <video
-            autoPlay loop muted playsInline preload="auto"
-            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
-            style={{ WebkitBackfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
-          >
-            <source src="/compressed_video_background.mp4" type="video/mp4" />
-          </video>
-        )}
-        {/* Subtle overlay to prevent background from overpowering UI text */}
-        <div className="absolute inset-0 bg-black/10 z-10" />
-      </div>
+    {/* 🛑 FIXED BACKGROUND LAYER 🛑 */}
+{/* Position fixed ensures it covers the entire viewport regardless of scrolling/nesting */}
+<div className="fixed inset-0 pointer-events-none z-0">
+  {isStaticBackgroundActive ? (
+    <div
+      className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
+      // 1. Paste your Vercel Blob URL for background.jpg here:
+      style={{ backgroundImage: "url('https://fwhxukzosp5gnmgn.public.blob.vercel-storage.com/apple-os/background.jpg')" }}
+    />
+  ) : (
+    <video
+      autoPlay 
+      loop 
+      muted 
+      playsInline 
+      preload="auto"
+      // 2. Use the image as a poster so the user sees it INSTANTLY while the video buffers:
+      className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
+      style={{ WebkitBackfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
+    >
+      {/* 3. Paste your Vercel Blob URL for compressed_video_background.mp4 here: */}
+      <source src="https://fwhxukzosp5gnmgn.public.blob.vercel-storage.com/apple-os/compressed_video_background.mp4" type="video/mp4" />
+    </video>
+  )}
+  {/* Subtle overlay to prevent background from overpowering UI text */}
+  <div className="absolute inset-0 bg-black/10 z-10" />
+</div>
 
       {/* 🖥️ UI OVERLAYS (Locked or Unlocked) */}
       <div className="relative z-20 h-screen w-full">
